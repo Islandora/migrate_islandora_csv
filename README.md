@@ -326,5 +326,33 @@ For `subtitle`, we're passing it through the `skip_on_empty` process plugin beca
     source: subtitle 
     method: process
 ```
-Now here's where things get interesting
+Now here's where things get interesting.  We can look up other entities to populate entity reference felds.  For example, all Repository Items have an entity reference field that holds a taxonomy term from the `islandora_models` vocabulary.  All of our examples are images, so we'll look up the Image model in the vocabulary since it already exists (it gets made for you when you use claw-playbook).  We use the `entity_lookup` process plugin to do this.
+```
+  field_model:
+    plugin: entity_lookup
+    source: constants/model
+    entity_type: taxonomy_term
+    value_key: name 
+    bundle_key: vid
+    bundle: islandora_models
+```
+The `entity_lookup` process plugin looks up an entity based on the configuration you give it.  You use the `entity_type`, `bundle_key`, and `bundle` configurations to limit which entities you search through.  `entity_type` is, as you'd suspect, th type of entity: node, media, file, taxonomy_term, etc...  `bundle_key` tells the migrate framework which property holds the bundle of the entity, and `bundle` is the actual bundle id you want to restrict by.  The search value you're looking for is the `source` configuration.  In this case we're looking for the string "Image", which we've defned as a constant.  And we're comparing it to the `name` field on each term by setting the `value_key` config.
+
+If you're not sure that the entities you're looking up already exist, you can use the `entity_generate` plugin, which takes the same config, but will create a new entity if the lookup fails.  We use this plugin to create `subject` taxonomy terms that we tag our nodes with.  A node can have multiple subjects, so we've encoded them in the CSV as pipe delimited strings.
+
+|subject|
+|----|
+|Neon signs\|Night|
+|Neon signs\|Night\|Funny|
+|Neon signs\|Night|
+|Drinking\|Neon signs|
+|/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg|
+|/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nothing to See Here.jpg|
+|/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Call For Champagne.jpg|
+|/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/This Must Be The Place.jpg|
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nails Nails Nails.jpg,Nails Nails Nails,,A sign pointing towards a nail salon.,2018-01-01,Neon signs|Night,Clem Onojeghuo
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg,Free Smells,We're givin' 'em away,A sign on a restaurant front advertising free smells,2018-02-01,Neon signs|Night|Funny,The Collab
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nothing to See Here.jpg,Nothing To See Here,Move Along People,A sign above a building that says "Nothing to see here",2018-03-01,Neon signs|Night,Argelis Rebolledo
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Call For Champagne.jpg,Call For Champagne,,A neon sign above some rotary telephones telling customers to call for champagne.,2018-04-01,Drinking|Neon signs,Design Doctor
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/This Must Be The Place.jpg,This Must Be The Place,,A neon sign on a multi-colored wall that reads "This Must Be The Place",2018-05-01,Neon signs,Tim Mossholder
 
