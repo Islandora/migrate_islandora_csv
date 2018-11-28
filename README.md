@@ -223,12 +223,108 @@ Either way you do it, when it's done, you should have 5 new image entities.  You
 
 ## Ingesting Nodes
 
-Those five images are nice, but we need something to hold their descriptive metadata and show them off.  We use nodes in Drupal to do this, and that means we have another migration file to work with.  Initially, the node migration is simpler that the file migration we just ran.  This is because all we're really doing is lining up columns with drupal fields.  It'll get more complex later when working with subjects and agents, but for now, open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.node.yml` and check it out.
+Those five images are nice, but we need something to hold their descriptive metadata and show them off.  We use nodes in Drupal to do this, and that means we have another migration file to work with.  Nestled in with our nodes' descriptive metadata, though, are more Drupal entities, and we're going to generate them on the fly while we're making nodes.  While we're doing it, we'll see how to use pipe delimited strings for multiple values as well as how to handle typed_relation fields that are provided by `controlled_access_terms`. Open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.node.yml` and check it out.
 
 ```
-http://purl.org/coar/resource_type/c_c513
+# Uninstall this config when the feature is uninstalled
+dependencies:
+  enforced:
+    module:
+      - migrate_islandora_csv
+
+id: node 
+label: Import Nodes from CSV 
+migration_group: migrate_islandora_csv
+
+# Pull from a CSV, and use the 'file' column as an index
+source:
+  plugin: csv
+  path: modules/contrib/migrate_islandora_csv/data/migration.csv
+  header_row_count: 1
+  keys:
+    - file 
+  constants:
+    model: Image 
+    relator: 'relators:pht' 
+
+# Set fields using values from the CSV
+process:
+  title: title
+
+  # We use the skip_on_empty plugin because
+  # not every row in the CSV has subtitle filled
+  # in.
+  field_alternative_title:
+    plugin: skip_on_empty
+    source: subtitle 
+    method: process
+
+  field_description: description
+
+  # Dates are EDTF strings
+  field_edtf_date: issued
+    
+  # Make the object an 'Image'
+  field_model:
+    plugin: entity_lookup
+    source: constants/model
+    entity_type: taxonomy_term
+    value_key: name 
+    bundle_key: vid
+    bundle: islandora_models 
+
+  # Split up our pipe-delimited string of
+  # subjects, and generate terms for each.
+  field_subject:
+    -
+      plugin: skip_on_empty
+      source: subject 
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: entity_generate
+      entity_type: taxonomy_term
+      value_key: name
+      bundle_key: vid
+      bundle: subject
+
+  # Complex fields can have their individual
+  # parts set independently.  Use / to denote
+  # you're working with a proerty of a field
+  # directly.
+  field_linked_agent/target_id:
+    plugin: entity_generate
+    source: photographer 
+    entity_type: taxonomy_term
+    value_key: name
+    bundle_key: vid
+    bundle: person 
+
+  # Hard-code the rel_type to photographer
+  # for all the names in the photographer
+  # column.
+  field_linked_agent/rel_type: constants/relator
+
+# We're making nodes
+destination:
+  plugin: 'entity:node'
+  default_bundle: islandora_object
 ```
 
-We're taking the `title`, `subtitle`, `description`, and `issued` columns from the CSV and applying them to the migrated nodes.  We're ignoring It mostly aligns CSV columns with Drupal fields, and introduces a useful process plugin, `skip_on_empty`, which can be used when a value may not exist for every row in the CSV.
-
+We're taking the `title`, `description`, and `issued` columns from the CSV and applying them directly to the migrated nodes without any further processing.
+```
+  title: title
+  field_description: description
+  field_edtf_date: issued
+```
+For `subtitle`, we're passing it through the `skip_on_empty` process plugin because not every row in our CSV has a subtitle entry.  It's very useful when you have spotty data, and you'll end up using it a lot.  The `method: process` bit tells the migrate framework only skip that particular field if the value is empty, and not to skip the whole row.  It's important, so don't forget it.  The full yml for setting `field_alternative_title` from subtitle looks like this:
+```
+  field_alternative_title:
+    plugin: skip_on_empty
+    source: subtitle 
+    method: process
+```
+Now here's where things get interesting
 
