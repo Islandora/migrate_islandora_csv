@@ -1,0 +1,7 @@
+name: 'Migrate Islandora CSV'
+type: module
+description: 'A tutorial on how to migrate files into Islandora using a CSV file'
+core: 8.x
+package: 'Islandora'
+dependencies:
+  - migrate_source_csv

@@ -1,0 +1,16 @@
+{
+  "name": "drupal/migrate_islandora_csv",
+  "type": "drupal-module",
+  "description": "A tutorial on how to migrate files into Islandora using a CSV file",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/migrate_islandora_csv",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/migrate_islandora_csv",
+    "source": "http://cgit.drupalcode.org/migrate_islandora_csv"
+  },
+  "require": { 
+    "drupal/migrate_source_csv" : "^2.2"
+  }
+}
