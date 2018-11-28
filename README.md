@@ -26,7 +26,9 @@ In this tutorial, we're working wth `islandora_demo` and `controlled_access_term
 - subject
 - person
 
-We'll do this by creating three migration yml files: one for files, one for nodes/subjects/people, and media (in that order).  The other two are subjects and agents, which give us a chance to show off some techniques for working with multi-valued fields and complex field types. We'll also see how the migrate framework can help de-duplicate, and at the same time, linked data-ize :tm: your data.  So hold on to your hats.  We start with files.
+We'll do this by creating three migrations, which follow the Extract-Transform-Load pattern.  You extract the information from a source, process the data to transform it into the format you need, and load it into the destination system (e.g. Drupal).  Migrations are stored in Drupal as configuration, which means they can be represented in yml, transferred to and from different sites, and are compatible with Drupal's configuration synchronization tools. And the structure of each yml file is arranged to follow the Extract-Transform-Load pattern.
+
+Now we're migrating five entity types, but we're only writing three migrations: files, nodes, and media.  The other two, subjects and agents, will be generated during the node migration.  This will give us a chance to show off some techniques for working with multi-valued fields, entity reference fields, and complex field types like `controlled_access_terms`'s `typed_relation` field.  We'll also see how the migrate framework can help de-duplicate, and at the same time, linked data-ize :tm: your data.  So hold on to your hats.  We start with files.
 
 ## Ingesting Files
 
@@ -111,11 +113,11 @@ destination:
 
 ### Anatomy of a Migration
 
-It seems like a lot to take in at first, but there's a pattern to Drupal migrations.  They always contain three key sections: `source`, `process`, and `destination`.
+It seems like a lot to take in at first, but there's a pattern to Drupal migrations.  They always contain three key sections: `source`, `process`, and `destination`.  And these sections correspond exactly to Extract, Transform, and Load.  
 
 #### Source
 
-The `source` section contains the configuration needed to create a Drupal source plugin.  A source plugin provides "rows" of data to processing plugins so that they can be worked on.  In this case, we're using the `csv` source plugin, which very literally uses rows, however you can have source plugins that work with other data formats like XML and JSON. Look at the config from this section.
+The `source` section contains the configuration needed to create a Drupal source plugin that will extract the data.  A source plugin provides "rows" of data to processing plugins so that they can be worked on.  In this case, we're using the `csv` source plugin, which very literally uses rows, however you can have source plugins that work with other data formats like XML and JSON. Look at the config from this section.
 ```
 source:
   plugin: csv
@@ -131,13 +133,13 @@ You can see we provide a path to its location, what delimiter to use, if it uses
 
 #### Process
 
-The `process` section contains entries for a series of processing steps.  Each step has a name and contains the configuration for one or more process plugins.  Multiples plugins are executed in sequence, with the results getting passed from one to another, forming a pipeline.  In this fashion,  you can transform data from the CSV into a format that Drupal is expecting.  There are many process plugins available, and we'll cover several throughout this tutorial.
+The `process` section contains entries for a series of processing steps to transform the source data.  Each step has a name and contains the configuration for one or more process plugins.  Multiples plugins are executed in sequence, with the results getting passed from one to another, forming a pipeline.  In this fashion,  you can transform data from the CSV into a format that Drupal is expecting.  There are many process plugins available, and we'll cover several throughout this tutorial.
 
 For each row of the CSV, each of these steps will be executed.  If the name of a step happens to be the same as a field or property name, the migrated entity will have that value for that field or property.  This is how you can apply metadata from the CSV to an entity.  If it's not named after a field or property, the migrate framework assumes it's a temporary value you're using as part of more complex logic.  It won't wind up on the entity when the migration is done, but it will be available for you to use within other process plugins.  You can always spot a temporary value by the fact that it's prefixed with an `@`.  You can also pass constants into process plugins, which are prefixed with `constants/`.
 
 #### Destination
 
-The `destination` section contains the configuration that describes what kind of entity we're creating.  
+The `destination` section contains the configuration that describes what gets loaded into Drupal.
 ```
 destination:
   plugin: 'entity:file'
@@ -215,7 +217,7 @@ This constant can be referenced as `constants/destination_dir` and passed into t
 
 ### Running the File Migration
 
-We haven't made any changes to the yml files yet, and so long as all the required modules have been enabled, you can run this migration as is and ingest the five sample images.  With Drush,  you can use the `migrate:import` (`mim` for short) command.  Its usage is `$ drush mim migration_id`  The id of the migration is defined at the top of each migration yml file.  If you check out the migration we just worked through, it has an id of `file`.  So to run it, execute `$ drush mim file` from the command line.
+With Drush,  you can use the `migrate:import` (`mim` for short) command to run a migration.  Its usage is `$ drush mim migration_id`  The id of the migration is defined at the top of each migration yml file.  If you check out the migration we just worked through, it has an id of `file`.  So to run it, execute `$ drush mim file` from the command line.
 
 Using the UI, you can navigate to http://localhost:8000/admin/structure/migrate and you will see "Migrate Islandora CSV" as a migration group.  Click on the "List Migrations" button and you will see a table of migrations to run, with some basic stats of what's been imported and how many entities there are in total for the migration.  Click the "Execute" button for the "Import Image Files" migration.  Make sure "Import" is selected in the drop down box and click "Execute".
 
@@ -348,4 +350,76 @@ If you're not sure that the entities you're looking up already exist, you can us
 |Drinking\|Neon signs|
 |Neon signs|
 
+We can hack those apart easily enough.  In PHP we'd do something like
+```php
+$subjects = explode($string, '|');
+$terms = [];
+foreach ($subjects as $name) {
+    $terms[] = \Drupal::service('entity_type.manager')->getStorage('taxonomy_term')->create([
+        ...
+        'vid' => 'subject',
+        'name' => $name,
+        ...
+    ]);
+}
+$node->set('field_subject', $terms);
+```
+
+With process plugins, that logic looks like
+```
+field_subject:
+    -
+      plugin: skip_on_empty
+      source: subject 
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: entity_generate
+      entity_type: taxonomy_term
+      value_key: name
+      bundle_key: vid
+      bundle: subject
+```
+Here we've got a small pipeline that uses the `skip_on_empty` process plugin, which we've already seen, followed by `explode`.  The `explode` process plugin operates exactly like its PHP counterpart, taking an array and a delimiter as input.  The combination of `skip_on_empty` and `explode` behave like a foreach loop on the explode results.  If we have an empty string, nothing happens.  If there's one or more pipe delimited subject names in the string, then `entity_generate` gets called for each name that's found.  The `entity_generate` process plugin will try to look up a subject by name, and if that fails, it creates one using the name and saves a reference to it in the node.  So `entity_generate` is actually smarter than our pseudo-code above, because it can be run over and over again and it won't duplicate entities :champagne:
+
+### Complex Fields
+
+Some fields don't hold just a single type of value.  In other words, not everything is just text, numbers, or references.  Using the Typed Data API, fields can hold bags of named values with different types.  Consider a field that holds an RGB color.  You could set it with PHP like so:
+```
+$node->set('field_color', ['R' => 255, 'G' => 255, 'B' => 255]);
+```
+
+You could even  have a multi-valued color field, and do something like this
+```php
+$node->set('field_color', [
+  ['R' => 0, 'G' => 0, 'B' => 0],
+  ['R' => 255, 'G' => 255, 'B' => 255],
+]);
+```
+
+In the migrate framework, you have two options for handling these types of fields.  You can build up the full array they're expecting, which is difficult and often impossible to do without writing a custom process plugin. Or you set each named value in the field with separate process pipelines.
+
+In `controlled_access_terms`, we have a notion of a `typed_relation`, which is an entity reference coupled with a marc relator.  It expects an associative array that looks like this:
+```
+[ 'target_id' => 1, 'rel_type' => 'relators:ctb']
+```
+
+The `target_id` portion takes an entity id, and rel_type takes the predicate for the marc relator we want to use to describe the relationship the entity has with the repository item.  This example would reference taxonomy_term 1 and give it the relator for "Contributor".
+
+If we want to set those values in yml, we can access `target_id` and `rel_type` independently by accessing them with a `/`.  
+```
+  field_linked_agent/target_id:
+    plugin: entity_generate
+    source: photographer 
+    entity_type: taxonomy_term
+    value_key: name
+    bundle_key: vid
+    bundle: person 
+
+  field_linked_agent/rel_type: constants/relator
+```
+
+Here we're looking at the `photographer` column in the CSV, which contains the names of the photographers that captured these images.  Since we know these are photographers, and not publishers or editors, we can bake in the `relator` constant we set to `relators:pht` in the `source` section of the migration.  So all that's left to do is to set the taxonomy term's id via `entity_generate`.  If the lookup succeeds, the id is returned.  If it fails, a term is created and its id is returned.  So we don't have to fuss with building associative arrays in the migrate framework by migrating each bit individually.
 
