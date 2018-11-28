@@ -118,7 +118,7 @@ It seems like a lot to take in at first, but there's a pattern to Drupal migrati
 #### Source
 
 The `source` section contains the configuration needed to create a Drupal source plugin that will extract the data.  A source plugin provides "rows" of data to processing plugins so that they can be worked on.  In this case, we're using the `csv` source plugin, which very literally uses rows, however you can have source plugins that work with other data formats like XML and JSON. Look at the config from this section.
-```
+```yml
 source:
   plugin: csv
   path: '/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/migration.csv'
@@ -140,7 +140,7 @@ For each row of the CSV, each of these steps will be executed.  If the name of a
 #### Destination
 
 The `destination` section contains the configuration that describes what gets loaded into Drupal.
-```
+```yml
 destination:
   plugin: 'entity:file'
   type: image
@@ -150,7 +150,7 @@ You can create any type of content entity in Drupal. In this case, we're making 
 #### The Process Section in Depth
 
 In the `process` section of the migration, we're copying the images over into a Drupal file system and setting the `uri` property on the corresponding File entity.
-```
+```yml
   uri:
     plugin: file_copy
     source:
@@ -163,7 +163,7 @@ The uri we're constructing is a stream wrapper of the form `scheme://path/to/fil
 
 Now, to perform this string manipulation in PHP, we'd do something like
 
-```
+```php
 $info = pathinfo($filepath);
 $filename = $info['basename'];
 $destination = "fedora://csv_migration/" . $filename;
@@ -172,7 +172,7 @@ $destination = "fedora://csv_migration/" . $filename;
 Which we will mimic exactly in the `process` section of our migration config.  Just like we declare variables and call functions with PHP code, we can make entries in the `process` section to store the output of Drupal process plugins. We'll build up a `destination` 'variable' and pass it into the `file_copy` process plugin.  
 
 To start, we'll get the filename using two process plugins:
-```
+```yml
   filename:
     -
       plugin: callback
@@ -187,7 +187,7 @@ The first process plugin, `callback`, lets you execute any PHP function that tak
 
 Now that we have the file name, we have to prepend it with `fedora://csv_migration/` to make the destination uri.  In our PHP code above, we used `.` to concatenate the strings.  In the migration framework, we use the `concat` process plugin.  You provide it with two or more strings to concatenate, as well as a delimiter.
 
-```
+```yml
   destination:
     plugin: concat
     delimiter: /
@@ -197,7 +197,7 @@ Now that we have the file name, we have to prepend it with `fedora://csv_migrati
 ```
 
 In our PHP code, we concatenated the `$filename` variable with a string literal. In our process plugin, we can provide the variable, e.g. the output of the `filename` process step, by prefixing it with an `@`.  We can't, however, pass in `fedora://csv_migration` directly as a string.  At first glance, you might think something like this would work, but it totally doesn't:
-```
+```yml
   # Can't do this.  Won't work at all.
   destination:
     plugin: concat
@@ -208,7 +208,7 @@ In our PHP code, we concatenated the `$filename` variable with a string literal.
 ```
 That's because the migrate framework only interprets `source` values as names of columns from the csv or names of other process steps.  Even if they're wrapped in quotes.  It will never try to use the string directly as a value.  To circumvent this, we decare a constant in the `source` section of the migration config.
 
-```
+```yml
   constants:
     destination_dir: 'fedora://csv_migration'
 ```
@@ -227,7 +227,7 @@ Either way you do it, when it's done, you should have 5 new image entities.  You
 
 Those five images are nice, but we need something to hold their descriptive metadata and show them off.  We use nodes in Drupal to do this, and that means we have another migration file to work with.  Nestled in with our nodes' descriptive metadata, though, are more Drupal entities, and we're going to generate them on the fly while we're making nodes.  While we're doing it, we'll see how to use pipe delimited strings for multiple values as well as how to handle typed_relation fields that are provided by `controlled_access_terms`. Open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.node.yml` and check it out.
 
-```
+```yml
 # Uninstall this config when the feature is uninstalled
 dependencies:
   enforced:
@@ -316,20 +316,20 @@ destination:
 ```
 
 We're taking the `title`, `description`, and `issued` columns from the CSV and applying them directly to the migrated nodes without any further processing.
-```
+```yml
   title: title
   field_description: description
   field_edtf_date: issued
 ```
 For `subtitle`, we're passing it through the `skip_on_empty` process plugin because not every row in our CSV has a subtitle entry.  It's very useful when you have spotty data, and you'll end up using it a lot.  The `method: process` bit tells the migrate framework only skip that particular field if the value is empty, and not to skip the whole row.  It's important, so don't forget it.  The full yml for setting `field_alternative_title` from subtitle looks like this:
-```
+```yml
   field_alternative_title:
     plugin: skip_on_empty
     source: subtitle 
     method: process
 ```
 Now here's where things get interesting.  We can look up other entities to populate entity reference felds.  For example, all Repository Items have an entity reference field that holds a taxonomy term from the `islandora_models` vocabulary.  All of our examples are images, so we'll look up the Image model in the vocabulary since it already exists (it gets made for you when you use claw-playbook).  We use the `entity_lookup` process plugin to do this.
-```
+```yml
   field_model:
     plugin: entity_lookup
     source: constants/model
@@ -366,7 +366,7 @@ $node->set('field_subject', $terms);
 ```
 
 With process plugins, that logic looks like
-```
+```yml
 field_subject:
     -
       plugin: skip_on_empty
@@ -387,7 +387,7 @@ Here we've got a small pipeline that uses the `skip_on_empty` process plugin, wh
 ### Complex Fields
 
 Some fields don't hold just a single type of value.  In other words, not everything is just text, numbers, or references.  Using the Typed Data API, fields can hold bags of named values with different types.  Consider a field that holds an RGB color.  You could set it with PHP like so:
-```
+```php
 $node->set('field_color', ['R' => 255, 'G' => 255, 'B' => 255]);
 ```
 
@@ -402,14 +402,14 @@ $node->set('field_color', [
 In the migrate framework, you have two options for handling these types of fields.  You can build up the full array they're expecting, which is difficult and often impossible to do without writing a custom process plugin. Or you set each named value in the field with separate process pipelines.
 
 In `controlled_access_terms`, we have a notion of a `typed_relation`, which is an entity reference coupled with a marc relator.  It expects an associative array that looks like this:
-```
+```php
 [ 'target_id' => 1, 'rel_type' => 'relators:ctb']
 ```
 
 The `target_id` portion takes an entity id, and rel_type takes the predicate for the marc relator we want to use to describe the relationship the entity has with the repository item.  This example would reference taxonomy_term 1 and give it the relator for "Contributor".
 
 If we want to set those values in yml, we can access `target_id` and `rel_type` independently by accessing them with a `/`.  
-```
+```yml
   field_linked_agent/target_id:
     plugin: entity_generate
     source: photographer 
