@@ -2,17 +2,18 @@
 
 ## Introduction
 
-Storing metadata as rows in a CSV or spreadsheet is a great way to get migrated into CLAW.  CSVs are easy to understand and work with, and there's good tools available for migrating into Drupal 8 using them. This documentation will help step you through the process of getting your files into your repository, and then converting the metadata in your CSV into Drupal entities.  It's not as scary as it sounds, but you will need a few things before beginning:
+Storing metadata as rows in a CSV file is a great way to get migrated into CLAW.  CSVs are easy to understand and work with, and there's good tooling available for using them to migrate.  The [migrate_source_csv](https://www.drupal.org/project/migrate_source_csv) contrib module provides a source plugin that's compatible with Drupal 8's [Migrate API](https://www.drupal.org/docs/8/api/migrate-api/migrate-api-overview). And by using the [migrate_plus](https://www.drupal.org/project/migrate_plus/) module, you can model customized migrations using yml and package them up as [features](https://www.drupal.org/project/features/).
 
-1. An instance of Islandora CLAW.  Use [CLAW playbook](https://github.com/Islandora-Devops/claw-playbook) to spin up an environment pre-loaded with a default metadata profile.
-1. Some basic command line skills.  You won't need to know much, but you'll have to `vagrant ssh` into the box, navigate into Drupal, and use `git` and `drush`.  If you can copy/paste into a terminal, you'll survive.
-1. This module, which is really a feature.  You can pull down via git with `git clone https://github.com/Islandora-CLAW/migrate_islandora_csv.git`.  This feature contains everything you'll see in the tutorial -- sample images, a CSV, and migration config.  You can check out the `boilerplate` branch when you're finished with the tutorial to get stub migrations that are ready to customize for your own migrations.
+In fact, this module is one such feature.  It even contains a `data` directory filled with some sample images and a CSV full of metadata.  The images and CSV file are available in the `data` directory.  In this README, we'll be inspecting each migration file in detail before running it .  You'll start out by migrating the images themselves first, and then you'll creating various Drupal entities to describe the files from the metadata in the CSV.  It's not as scary as it sounds, but you will need a few things before beginning:
 
-A big part of this tutorial relies on `islandora_demo` and `controlled_access_terms` to define all the entity types we'll be migrating into.  You're not required to use the `islandora_demo` or `controlled_access_terms` for your repository, but for the purposes of demonstration, it saves you a lot of UI work so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile. 
+1. An instance of Islandora CLAW.  Use [CLAW playbook](https://github.com/Islandora-Devops/claw-playbook) to spin up an environment pre-loaded with all the modules you need (except this one)
+1. Some basic command line skills.  You won't need to know much, but you'll have to `vagrant ssh` into the box, navigate into Drupal, and use `git` and `drush`, etc...  If you can copy/paste into a terminal, you'll survive.
+
+A big part of this tutorial relies on the [islandora_demo](https://github.com/Islandora-CLAW/islandora_demo) and [controlled_access_terms_default_configuration](https://github.com/Islandora-CLAW/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_default_configuration) features, which define the default metadata profile for Islandora (which we'll be migrating into).  You're not required to use the `islandora_demo` or `controlled_access_terms_default_configuration` for your repository, but for the purposes of demonstration, it saves you a lot of UI work so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal. 
 
 ## Overview
 
-In Islandora, migrations involve creating multiple different types of content entities in Drupal to represent a single item in a repository.  Each row in the CSV must contain enough information to create
+In Islandora, migrations involve creating several different types of content entities in Drupal to represent a single item in a repository.  Each row in the CSV must contain enough information to create
 - a file, which holds the actual binary contents of an item
 - a node, which holds the descriptive metadata for an item
 - a media, which holds technical metadata and references the file and the node, linking the two together
@@ -217,11 +218,7 @@ This constant can be referenced as `constants/destination_dir` and passed into t
 
 ### Running the File Migration
 
-With Drush,  you can use the `migrate:import` (`mim` for short) command to run a migration.  Its usage is `$ drush mim migration_id`  The id of the migration is defined at the top of each migration yml file.  If you check out the migration we just worked through, it has an id of `file`.  So to run it, execute `$ drush mim file` from the command line.
-
-Using the UI, you can navigate to http://localhost:8000/admin/structure/migrate and you will see "Migrate Islandora CSV" as a migration group.  Click on the "List Migrations" button and you will see a table of migrations to run, with some basic stats of what's been imported and how many entities there are in total for the migration.  Click the "Execute" button for the "Import Image Files" migration.  Make sure "Import" is selected in the drop down box and click "Execute".
-
-Either way you do it, when it's done, you should have 5 new image entities.  You can confirm their existence by visiting http://localhost:8000/admin/content/files.  You should see 5 images of neon signs in the list.
+Navigate to http://localhost:8000/admin/structure/migrate and you will see "Migrate Islandora CSV" as a migration group.  Click on the "List Migrations" button and you will see a table of migrations to run, with some basic stats of what's been imported and how many entities there are in total for the migration.  Click the "Execute" button for the "Import Image Files" migration.  Make sure "Import" is selected in the drop down box and click "Execute".  You should see a progress bar going as the batch gets worked on.  When it's done, you should have 5 new image entities.  You can confirm their existence by visiting http://localhost:8000/admin/content/files.  You should see 5 images of neon signs in the list.
 
 ## Ingesting Nodes
 
@@ -421,5 +418,18 @@ If we want to set those values in yml, we can access `target_id` and `rel_type` 
   field_linked_agent/rel_type: constants/relator
 ```
 
-Here we're looking at the `photographer` column in the CSV, which contains the names of the photographers that captured these images.  Since we know these are photographers, and not publishers or editors, we can bake in the `relator` constant we set to `relators:pht` in the `source` section of the migration.  So all that's left to do is to set the taxonomy term's id via `entity_generate`.  If the lookup succeeds, the id is returned.  If it fails, a term is created and its id is returned.  So we don't have to fuss with building associative arrays in the migrate framework by migrating each bit individually.
+Here we're looking at the `photographer` column in the CSV, which contains the names of the photographers that captured these images.  Since we know these are photographers, and not publishers or editors, we can bake in the `relator` constant we set to `relators:pht` in the `source` section of the migration.  So all that's left to do is to set the taxonomy term's id via `entity_generate`.  If the lookup succeeds, the id is returned.  If it fails, a term is created and its id is returned.  In the end, by using the `/` syntax to set properties on complex fields, everything gets wrapped up into that nice associative array structure for you automatically.  So let's run that migration.
+
+### Running the node migration
+
+Like with the file migration, navigate to http://localhost:8000/admin/structure/migrate and you will see “Migrate Islandora CSV” as a migration group. Click on the “List Migrations” button, then click “Execute” for the “Import Nodes, Subjects, and Photographers” migration. Make sure “Import” is selected in the drop down box and click “Execute”.
+
+Now go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's ust a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
+
+## Migrating Media
+
+Media entities are Drupal's solution for fieldable files.  Since you can't put fields on a file, what you can do is wrap the file with a Media entity.  In addition to a file reference, technical and structural metadata for the file go on the Media entity.  For example, mimetype, file size, resolution, etc... all belong on a Media entity.  Media also have a few special fields that are required for Islandora, `field_media_of` and `field_use`, which denote what node owns the media and what role the media serves, repectively.  Since the Media entity references both the file it wraps and the node that owns it, Media entities act as a bridge between files and nodes, tying them together.  And to do this, we make use of one last process plugin, `migration_lookup`.  Open up `/var/www/html/drupal/web/modules/contrib/
+
+
+
 
