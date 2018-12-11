@@ -461,8 +461,110 @@ from anywhere within Drupal will fire off the migration.  Go to http://localhost
 
 ## Migrating Media
 
-Media entities are Drupal's solution for fieldable files.  Since you can't put fields on a file, what you can do is wrap the file with a Media entity.  In addition to a file reference, technical and structural metadata for the file go on the Media entity.  For example, mimetype, file size, resolution, etc... all belong on a Media entity.  Media also have a few special fields that are required for Islandora, `field_media_of` and `field_use`, which denote what node owns the media and what role the media serves, repectively.  Since the Media entity references both the file it wraps and the node that owns it, Media entities act as a bridge between files and nodes, tying them together.  And to do this, we make use of one last process plugin, `migration_lookup`.  Open up `/var/www/html/drupal/web/modules/contrib/
+Media entities are Drupal's solution for fieldable files.  Since you can't put fields on a file, what you can do is wrap the file with a Media entity.  In addition to a file reference, technical and structural metadata for the file go on the Media entity.  For example, mimetype, file size, resolution, etc... all belong on a Media entity.  Media also have a few special fields that are required for Islandora, `field_media_of` and `field_use`, which denote what node owns the media and what role the media serves, repectively.  Since the Media entity references both the file it wraps and the node that owns it, Media entities act as a bridge between files and nodes, tying them together.  And to do this, we make use of one last process plugin, `migration_lookup`.  Open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.media.yml` and give it a look.
 
+```yml
+# Uninstall this config when the feature is uninstalled
+dependencies:
+  enforced:
+    module:
+      - migrate_islandora_csv 
 
+id: media 
+label: Import Media from CSV 
+migration_group: migrate_islandora_csv
 
+source:
+  plugin: csv
+  path: modules/contrib/migrate_islandora_csv/data/migration.csv
 
+  # 1 means you have a header row, 0 means you don't
+  header_row_count: 1
+
+  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  keys:
+    - file 
+
+  # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
+  constants:
+    # We're tagging our media as Original Files 
+    use: Original File 
+
+    # Everything gets created as admin
+    uid: 1
+
+process:
+
+  name: title
+  uid: constants/uid
+
+  # Make the media an 'Original File'
+  field_media_use:
+    plugin: entity_lookup
+    source: constants/use
+    entity_type: taxonomy_term
+    value_key: name 
+    bundle_key: vid
+    bundle: islandora_media_use 
+
+  # Lookup the migrated file in the file migration.
+  field_media_image:
+    plugin: migration_lookup
+    source: file 
+    migration: file 
+    no_stub: true
+
+  # Lookup the migrated node in the node migration
+  field_media_of:
+    plugin: migration_lookup
+    source: file 
+    migration: node 
+    no_stub: true
+    
+destination:
+  # These are 'image' media we're making.
+  plugin: 'entity:media'
+  default_bundle: image 
+
+migration_dependencies:
+  required:
+    - migrate_plus.migration.file
+    - migrate_plus.migration.node
+  optional: {  }
+```
+
+Compared to the other migrations, this one is very straightforward.  There's no string or array manipulation in yml, and at most there' only one process plugin per field. Title and user are set directly, with no processing required
+```yml
+  name: title
+  uid: constants/uid
+```
+The `field_media_use` field is a tag that's used to denote the purpose of a file with regard to the node it belongs to.  E.g. is this the original file? a lower quality derivative? thumbnail? etc...  In many ways it bears a resemblance to DSID in Islandora 7.x.  Like `field_model` with nodes, the vocabulary already exists in your Islandora install, so all you have to do is look it up with the `entity_lookup` plugin.
+```yml
+  # Make the media an 'Original File'
+  field_media_use:
+    plugin: entity_lookup
+    source: constants/use
+    entity_type: taxonomy_term
+    value_key: name 
+    bundle_key: vid
+    bundle: islandora_media_use 
+```
+The `field_media_image` and `field_media_of` fields are how the media binds a file to a node.  You could use `entity_lookup` or `entity_generate`, but we've already migrated them and can very easily look them up by the id assigned to them during migration.  But what's the benefit of doing so?  The `entity_lookup` and `entity_generate` process plugins do the job fine, right?
+
+The main advantage of using `migration_lookup` and defining migrations whenever possible, is that migrated entites can be rolled back.  If you were to hop into your console and execute
+```bash
+drush migrate:rollback --group migrate_islandora_csv
+```
+Your nodes, media, and files would all be gone.  But your subjects and photographers would remain.  If you want to truly and cleanly roll back every entity in a migration, you need to define those migrations and use `migration_lookup` to set entity reference fields.
+
+## What have we learned?
+
+If you've made it all the way to the end here, then you've learned that you can migrate files and CSV metadata into Islandora using only yml files.  You've seen how to transform data with pipelines of processing plugins and can handle numeric, text, and entity reference fields.  You can handle multiple values for fields, and even more complicated things like `typed_relation` fields.  And as big as this walkthrough was, we're only scratching the surface of what can be done with the Migrate API.
+
+## Where to go from here?
+
+There's certainly more you can do with Drupal 8's Migrate API.  There's a plethora of source and processing plugins out there that can handle pretty much anything you throw at it.  XML and JSON are fair game.  You can also request sources using HTTP, so you can always point it at an existing systems REST API and go from there.  Eventually, you'll also have to write your own process plugin if you can't make your logic work with the Migrate API's sometimes awkward workflow.
+
+But really the best thing to do is try and get your data into Islandora!  You can use the `boilerplate` branch of this repository to clone down an empty migration, ready for you to customize to fit your data.  And as you assmble it into CSV format, keep in mind that if you have more than just names for things like subjects and authors, that you can always make more CSVs.  Think of it like maintaining tables in an SQL database.  Each CSV has unique keys, so you can lookup/join entiities between CSVs using those keys.  And you can still pipe delimit the keys like we did in our example to handle multi-vlaued fields.
+
+The best part is, if you maintain these CSVs, they can be used to make bulk updates to metadata.  Just make your changes, then run the migration(s) again with the `--update` flag.  It might not be the most efficient way to do it, as you'll update every entity, even if it didn't change.  But you can manage that by breaking things down per collection or object type.  If you can keep the CSVs sufficiently small, it's a viable solution for a small repository.
