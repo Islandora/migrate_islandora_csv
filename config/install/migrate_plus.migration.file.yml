@@ -1,7 +1,9 @@
+# Uninstall this config when the feature is uninstalled
 dependencies:
   enforced:
     module:
       - migrate_islandora_csv 
+
 id: file
 label: Import Image Files
 migration_group: migrate_islandora_csv 
@@ -34,9 +36,9 @@ source:
 
 process:
 
-  ##
-  # The following two fields are temporary, and just used to generate a destination for the file.
-  ##
+  # Set these properties from constants.
+  filemime: constants/mimetype
+  uid: constants/uid
 
   # Hack the file name out of the full path provided in the 'file' column.
   filename:
@@ -66,9 +68,6 @@ process:
       - file # The source column in the CSV
       - '@destination' # The destination entry from above  
 
-  # Set these properties from constants.
-  filemime: constants/mimetype
-  uid: constants/uid
 
 destination:
   # These are Drupal 'image' entities we're making, not just plain 'file' entities.
