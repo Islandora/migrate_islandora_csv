@@ -31,6 +31,8 @@ We'll do this by creating three migrations, which follow the [Extract-Transform-
 
 Now we're migrating five entity types, but we're only writing three migrations: files, nodes, and media.  The other two, subjects and agents, will be generated during the node migration.  This will give us a chance to show off some techniques for working with multi-valued fields, entity reference fields, and complex field types like `controlled_access_terms`'s `typed_relation` field.  We'll also see how the migrate framework can help de-duplicate, and at the same time, linked data-ize :tm: your data by looking up previously migrated entities.  So hold on to your hats.  First, let's get this puppy onto your Islandora instance.
 
+To perform the migrations, we'll be using `drush`. We will be able to run each of the file, node, and media migrations seprarately or all at once in a group. We will also learn how to roll back a migration in case it didn't go as planned.
+
 ## Installation
 
 From your `claw-playbook` directory, issue the following commands to clone down this module from git:
@@ -322,7 +324,7 @@ process:
 
   # Complex fields can have their individual
   # parts set independently.  Use / to denote
-  # you're working with a proerty of a field
+  # you're working with a property of a field
   # directly.
   field_linked_agent/target_id:
     plugin: entity_generate
@@ -362,11 +364,12 @@ Now here's where things get interesting.  We can look up other entities to popul
     plugin: entity_lookup
     source: constants/model
     entity_type: taxonomy_term
+    # 'name' is the string value of the term, e.g. 'Original file', 'Thumnbnail'.
     value_key: name 
     bundle_key: vid
     bundle: islandora_models
 ```
-The `entity_lookup` process plugin looks up an entity based on the configuration you give it.  You use the `entity_type`, `bundle_key`, and `bundle` configurations to limit which entities you search through.  `entity_type` is, as you'd suspect, th type of entity: node, media, file, taxonomy_term, etc...  `bundle_key` tells the migrate framework which property holds the bundle of the entity, and `bundle` is the actual bundle id you want to restrict by.  The search value you're looking for is the `source` configuration.  In this case we're looking for the string "Image", which we've defned as a constant.  And we're comparing it to the `name` field on each term by setting the `value_key` config.
+The `entity_lookup` process plugin looks up an entity based on the configuration you give it.  You use the `entity_type`, `bundle_key`, and `bundle` configurations to limit which entities you search through.  `entity_type` is, as you'd suspect, the type of entity: node, media, file, taxonomy_term, etc...  `bundle_key` tells the migrate framework which property holds the bundle of the entity, and `bundle` is the actual bundle id you want to restrict by.  The search value you're looking for is the `source` configuration.  In this case we're looking for the string "Image", which we've defned as a constant.  And we're comparing it to the `name` field on each term by setting the `value_key` config.
 
 If you're not sure that the entities you're looking up already exist, you can use the `entity_generate` plugin, which takes the same config, but will create a new entity if the lookup fails.  We use this plugin to create `subject` taxonomy terms that we tag our nodes with.  A node can have multiple subjects, so we've encoded them in the CSV as pipe delimited strings.
 
@@ -414,7 +417,7 @@ Here we've got a small pipeline that uses the `skip_on_empty` process plugin, wh
 
 ### Complex Fields
 
-Some fields don't hold just a single type of value.  In other words, not everything is just text, numbers, or references.  Using the Typed Data API, fields can hold bags of named values with different types.  Consider a field that holds an RGB color.  You could set it with PHP like so:
+Some fields don't hold just a single type of value.  In other words, not everything is just text, numbers, or references.  Using the Typed Data API, fields can hold groups of named values with different types.  Consider a field that holds an RGB color.  You could set it with PHP like so:
 ```php
 $node->set('field_color', ['R' => 255, 'G' => 255, 'B' => 255]);
 ```
@@ -429,7 +432,7 @@ $node->set('field_color', [
 
 In the migrate framework, you have two options for handling these types of fields.  You can build up the full array they're expecting, which is difficult and often impossible to do without writing a custom process plugin. Or you set each named value in the field with separate process pipelines.
 
-In `controlled_access_terms`, we have a notion of a `typed_relation`, which is an entity reference coupled with a marc relator.  It expects an associative array that looks like this:
+In `controlled_access_terms`, we have a notion of a `typed_relation`, which is an entity reference coupled with a MARC relator.  It expects an associative array that looks like this:
 ```php
 [ 'target_id' => 1, 'rel_type' => 'relators:ctb']
 ```
@@ -457,7 +460,7 @@ Like with the file migration
 ```bash
 drush migrate:import node
 ```
-from anywhere within Drupal will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
+from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
 
 ## Migrating Media
 
@@ -533,7 +536,7 @@ migration_dependencies:
   optional: {  }
 ```
 
-Compared to the other migrations, this one is very straightforward.  There's no string or array manipulation in yml, and at most there' only one process plugin per field. Title and user are set directly, with no processing required
+Compared to the other migrations, this one is very straightforward.  There's no string or array manipulation in yml, and at most there's only one process plugin per field. Title and user are set directly, with no processing required
 ```yml
   name: title
   uid: constants/uid
