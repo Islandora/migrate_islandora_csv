@@ -232,19 +232,19 @@ This constant can be referenced as `constants/destination_dir` and passed into t
 
 Migrations can be executed via `drush` using the `migrate:import` command.  You specify which migration to run by using the id defined in its yml.  To run the file migration from the command line, make sure you're within `/var/www/html/drupal/web` (or any subdirectory) and enter
 ```bash
-drush migrate:import file
+drush migrate:import file --userid=1
 ```
 If you've already run the migration before, but want to re-run it for any reason, use the `--update` flag.
 ```bash
-drush migrate:import file --update
+drush migrate:import file --update --userid=1
 ```
 You may have noticed that migrations can be grouped, and that they define a `migration_group` in their configuration.  You can execute an entire group of migrations using the `--group` flag.  For example, to run the entire group defined in this module
 ```bash
-drush migrate:import --group migrate_islandora_csv
+drush migrate:import --group migrate_islandora_csv --userid=1
 ```
 You can also use the `migrate:rollback` command to delete all migrated entities.  Like `migrate:import`, it also respects the `--group` flag.  So to rollback everything we just did:
 ```bash
-drush migrate:rollback --group migrate_islandora_csv
+drush migrate:rollback --group migrate_islandora_csv --userid=1
 ```
 If something goes bad during development, sometimes migrations can get stuck in a bad state.  Use the `migrate:reset` command to put a migration back to `Idle`.  For example, with the `file` migration, use
 ```bash
@@ -458,7 +458,7 @@ Here we're looking at the `photographer` column in the CSV, which contains the n
 
 Like with the file migration
 ```bash
-drush migrate:import node
+drush migrate:import node --userid=1
 ```
 from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
 
@@ -556,7 +556,7 @@ The `field_media_image` and `field_media_of` fields are how the media binds a fi
 
 The main advantage of using `migration_lookup` and defining migrations whenever possible, is that migrated entites can be rolled back.  If you were to hop into your console and execute
 ```bash
-drush migrate:rollback --group migrate_islandora_csv
+drush migrate:rollback --group migrate_islandora_csv --userid=1
 ```
 Your nodes, media, and files would all be gone.  But your subjects and photographers would remain.  If you want to truly and cleanly roll back every entity in a migration, you need to define those migrations and use `migration_lookup` to set entity reference fields.
 
