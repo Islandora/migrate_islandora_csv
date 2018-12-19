@@ -244,7 +244,7 @@ drush migrate:import --group migrate_islandora_csv --userid=1
 ```
 You can also use the `migrate:rollback` command to delete all migrated entities.  Like `migrate:import`, it also respects the `--group` flag.  So to rollback everything we just did:
 ```bash
-drush migrate:rollback --group migrate_islandora_csv --userid=1
+drush migrate:rollback --group migrate_islandora_csv
 ```
 If something goes bad during development, sometimes migrations can get stuck in a bad state.  Use the `migrate:reset` command to put a migration back to `Idle`.  For example, with the `file` migration, use
 ```bash
@@ -556,7 +556,7 @@ The `field_media_image` and `field_media_of` fields are how the media binds a fi
 
 The main advantage of using `migration_lookup` and defining migrations whenever possible, is that migrated entites can be rolled back.  If you were to hop into your console and execute
 ```bash
-drush migrate:rollback --group migrate_islandora_csv --userid=1
+drush migrate:rollback --group migrate_islandora_csv
 ```
 Your nodes, media, and files would all be gone.  But your subjects and photographers would remain.  If you want to truly and cleanly roll back every entity in a migration, you need to define those migrations and use `migration_lookup` to set entity reference fields.
 
