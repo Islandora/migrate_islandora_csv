@@ -6,6 +6,7 @@
 * [Introduction](#introduction)
 * [Dependencies](#dependencies)
 * [Overview](#overview)
+* [Installation](#installation)
 * [Ingesting Files](#ingesting-files)
     * [Anatomy of a migration](#anatomy-of-a-migration)
         * [Source](#source)
