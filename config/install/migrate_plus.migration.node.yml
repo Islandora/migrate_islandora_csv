@@ -10,6 +10,7 @@ migration_group: migrate_islandora_csv
 
 source:
   plugin: csv
+  
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
 
   # 1 means you have a header row, 0 means you don't
@@ -24,9 +25,6 @@ source:
     # We're tagging our nodes as Images
     model: Image 
 
-    # The 'photographer' MARC relator
-    relator: 'relators:pht' 
-
     # Everything gets created as admin
     uid: 1
 
@@ -35,19 +33,6 @@ process:
   title: title
   uid: constants/uid
 
-  # We use the skip_on_empty plugin because
-  # not every row in the CSV has subtitle filled
-  # in.
-  field_alternative_title:
-    plugin: skip_on_empty
-    source: subtitle 
-    method: process
-
-  field_description: description
-
-  # Dates are EDTF strings
-  field_edtf_date: issued
-    
   # Make the object an 'Image'
   field_model:
     plugin: entity_lookup
@@ -56,40 +41,6 @@ process:
     value_key: name 
     bundle_key: vid
     bundle: islandora_models 
-
-  # Split up our pipe-delimited string of
-  # subjects, and generate terms for each.
-  field_subject:
-    -
-      plugin: skip_on_empty
-      source: subject 
-      method: process
-    -
-      plugin: explode
-      delimiter: '|'
-    -
-      plugin: entity_generate
-      entity_type: taxonomy_term
-      value_key: name
-      bundle_key: vid
-      bundle: subject
-
-  # Complex fields can have their individual
-  # parts set independently.  Use / to denote
-  # you're working with a proerty of a field
-  # directly.
-  field_linked_agent/target_id:
-    plugin: entity_generate
-    source: photographer 
-    entity_type: taxonomy_term
-    value_key: name
-    bundle_key: vid
-    bundle: person 
-
-  # Hard-code the rel_type to photographer
-  # for all the names in the photographer
-  # column.
-  field_linked_agent/rel_type: constants/relator
 
 # We're making nodes
 destination:
