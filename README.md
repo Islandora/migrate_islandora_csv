@@ -11,6 +11,8 @@ In fact, this module is one such feature.  It even contains a `data` directory f
 
 A big part of this tutorial relies on the [islandora_demo](https://github.com/Islandora-CLAW/islandora_demo) and [controlled_access_terms_default_configuration](https://github.com/Islandora-CLAW/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_default_configuration) features, which define the default metadata profile for Islandora (which we'll be migrating into).  You're not required to use the `islandora_demo` or `controlled_access_terms_default_configuration` for your repository, but for the purposes of demonstration, it saves you a lot of UI administrivia so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal. 
 
+__A note on using Features__: This process makes heavy use of Features, which is an easy way to ship and install Drupal configuration. However, after enabling a Feature module, the code in that module's directory is no longer "live", as the configuration now resides in the Drupal database. If you change code in the YAML files, it will not take effect until you re-import the Feature. There is a walkthrough in the "Configuration" section of the [Migrate 7.x Claw](https://github.com/Islandora-Devops/migrate_7x_claw) tutorial. 
+
 ## Overview
 
 In Islandora, migrations involve creating several different types of content entities in Drupal to represent a single item in a repository.  Each row in the CSV must contain enough information to create
