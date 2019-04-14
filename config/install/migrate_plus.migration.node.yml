@@ -76,7 +76,7 @@ process:
 
   # Complex fields can have their individual
   # parts set independently.  Use / to denote
-  # you're working with a proerty of a field
+  # you're working with a property of a field
   # directly.
   field_linked_agent/target_id:
     plugin: entity_generate
