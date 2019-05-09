@@ -2,27 +2,27 @@
 dependencies:
   enforced:
     module:
-      - migrate_islandora_csv 
+      - migrate_islandora_csv
 
-id: media 
-label: Import Media from CSV 
+id: media
+label: Import Media from CSV
 migration_group: migrate_islandora_csv
 
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
 
-  # 1 means you have a header row, 0 means you don't
+  # Row to treat as the header row; 0 for no headers, 1 for top row, other rows should work too.
   header_row_count: 1
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
   keys:
-    - file 
+    - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
     # We're tagging our media as Original Files 
-    use: Original File 
+    use: Original File
 
     # Everything gets created as admin
     uid: 1
@@ -37,28 +37,28 @@ process:
     plugin: entity_lookup
     source: constants/use
     entity_type: taxonomy_term
-    value_key: name 
+    value_key: name
     bundle_key: vid
-    bundle: islandora_media_use 
+    bundle: islandora_media_use
 
   # Lookup the migrated file in the file migration.
   field_media_image:
     plugin: migration_lookup
-    source: file 
-    migration: file 
+    source: file
+    migration: file
     no_stub: true
 
   # Lookup the migrated node in the node migration
   field_media_of:
     plugin: migration_lookup
-    source: file 
-    migration: node 
+    source: file
+    migration: node
     no_stub: true
-    
+
 destination:
   # These are 'image' media we're making.
   plugin: 'entity:media'
-  default_bundle: image 
+  default_bundle: image
 
 migration_dependencies:
   required:
