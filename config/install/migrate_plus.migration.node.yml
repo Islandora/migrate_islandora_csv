@@ -47,15 +47,39 @@ process:
 
   # Dates are EDTF strings
   field_edtf_date: issued
-    
-  # Make the object an 'Image'
+
+  # Use mimetype to set Islandora media type.
   field_model:
-    plugin: entity_lookup
-    source: constants/model
-    entity_type: taxonomy_term
-    value_key: name 
-    bundle_key: vid
-    bundle: islandora_models 
+    # Get a mimetype (eg image/jpeg) from a process plugin.
+    -
+      source: file
+      plugin: file_mimetype
+    # Get the type only (strip slash and subtype).
+    -
+      plugin: str_replace
+      search: "#/.*#"
+      replace: ""
+      regex: true
+    # Convert "image" => "Image".
+    -
+      plugin: callback
+      callable: ucfirst
+    # Skip unsupported types.
+    -
+      plugin: skip_on_value
+      not_equals: true
+      method: row
+      value:
+        - Image
+        - Video
+    # Find a term in the models vocab.
+    -
+      plugin: entity_lookup
+      source: '@type'
+      entity_type: taxonomy_term
+      value_key: name
+      bundle_key: vid
+      bundle: islandora_models
 
   # Split up our pipe-delimited string of
   # subjects, and generate terms for each.
