@@ -4,28 +4,28 @@ dependencies:
     module:
       - migrate_islandora_csv
 
-id: node 
-label: Import Nodes from CSV 
+id: node
+label: Import Nodes from CSV
 migration_group: migrate_islandora_csv
 
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
 
-  # 1 means you have a header row, 0 means you don't
+  # Row to treat as the header row; 0 for no headers, 1 for top row, other rows should work too.
   header_row_count: 1
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
   keys:
-    - file 
+    - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
     # We're tagging our nodes as Images
-    model: Image 
+    model: Image
 
     # The 'photographer' MARC relator
-    relator: 'relators:pht' 
+    relator: 'relators:pht'
 
     # Everything gets created as admin
     uid: 1
@@ -40,7 +40,7 @@ process:
   # in.
   field_alternative_title:
     plugin: skip_on_empty
-    source: subtitle 
+    source: subtitle
     method: process
 
   field_description: description
@@ -62,7 +62,7 @@ process:
   field_subject:
     -
       plugin: skip_on_empty
-      source: subject 
+      source: subject
       method: process
     -
       plugin: explode
@@ -80,11 +80,11 @@ process:
   # directly.
   field_linked_agent/target_id:
     plugin: entity_generate
-    source: photographer 
+    source: photographer
     entity_type: taxonomy_term
     value_key: name
     bundle_key: vid
-    bundle: person 
+    bundle: person
 
   # Hard-code the rel_type to photographer
   # for all the names in the photographer
