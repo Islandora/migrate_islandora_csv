@@ -7,6 +7,11 @@ dependencies:
 id: file
 label: Import Files
 migration_group: migrate_islandora_csv
+migration_tags:
+  - CSV
+migration_dependencies:
+  required:
+    - node
 
 source:
   plugin: csv

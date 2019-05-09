@@ -7,6 +7,12 @@ dependencies:
 id: media
 label: Import Media from CSV
 migration_group: migrate_islandora_csv
+migration_tags:
+  - CSV
+migration_dependencies:
+  required:
+    - node
+    - file
 
 source:
   plugin: csv
