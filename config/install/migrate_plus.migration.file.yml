@@ -5,8 +5,8 @@ dependencies:
       - migrate_islandora_csv
 
 id: file
-label: Import Image Files
-migration_group: migrate_islandora_csv 
+label: Import Files
+migration_group: migrate_islandora_csv
 
 source:
   plugin: csv
@@ -25,11 +25,7 @@ source:
     # Islandora uses flysystem and stream wrappers to work with files.  What we're really saying here is
     # to put these files in Fedora in a 'csv_migration' folder.  It doesn't matter if the directory
     # doesn't exist yet, it will get created for you automatically.
-    destination_dir: 'fedora://csv_migration' 
-
-    # Hard-code mime type to jpeg.  This could easily come from a column in the CSV if you have
-    # different mimetypes.
-    mime: image/jpeg
+    destination_dir: 'fedora://csv_migration'
 
     # Everything gets created as admin
     uid: 1
@@ -37,7 +33,6 @@ source:
 process:
 
   # Set these properties from constants.
-  filemime: constants/mimetype
   uid: constants/uid
 
   # Extract filename from the filepath in 'file' column.
@@ -64,10 +59,32 @@ process:
     plugin: file_copy
     source:
       - file # The source column in the CSV
-      - '@destination' # The destination entry from above  
+      - '@destination' # The destination entry from above
 
+  # Process plugin to wrap Drupal mimetype guessing service.
+  filemime:
+    -
+      source: file
+      plugin: file_mimetype
+
+  # Use mimetype to set Islandora media type.
+  type:
+    -
+      source: file
+      plugin: file_mimetype
+    -
+      plugin: str_replace
+      search: "#/.*#"
+      replace: ""
+      regex: true
+    -
+      plugin: skip_on_value
+      not_equals: true
+      method: row
+      value:
+        - image
+        - video
 
 destination:
   # These are Drupal 'image' entities we're making, not just plain 'file' entities.
   plugin: 'entity:file'
-  type: image
