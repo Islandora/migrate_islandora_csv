@@ -72,24 +72,5 @@ process:
       source: file
       plugin: file_mimetype
 
-  # Use mimetype to set Islandora media type.
-  type:
-    -
-      source: file
-      plugin: file_mimetype
-    -
-      plugin: str_replace
-      search: "#/.*#"
-      replace: ""
-      regex: true
-    -
-      plugin: skip_on_value
-      not_equals: true
-      method: row
-      value:
-        - image
-        - video
-
 destination:
-  # These are Drupal 'image' entities we're making, not just plain 'file' entities.
   plugin: 'entity:file'

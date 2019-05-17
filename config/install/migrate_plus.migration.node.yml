@@ -23,9 +23,6 @@ source:
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
-    # We're tagging our nodes as Images
-    model: Image
-
     # The 'photographer' MARC relator
     relator: 'relators:pht'
 
@@ -50,34 +47,59 @@ process:
   # Dates are EDTF strings
   field_edtf_date: issued
 
-  # Use mimetype to set Islandora media type.
-  field_model:
-    # Get a mimetype (eg image/jpeg) from a process plugin.
+  _mimetype:
     -
+      # Get a mimetype (eg image/jpeg) from mimetype process plugin.
       source: file
       plugin: file_mimetype
-    # Get the type only (strip slash and subtype).
+
+  _model:
     -
+      # Get a mimetype (eg image/jpeg) from mimetype process plugin.
+      source: file
+      plugin: file_mimetype
+    -
+      # Get the type only (strip slash and subtype).
       plugin: str_replace
+      source: '@_mimetype'
       search: "#/.*#"
       replace: ""
       regex: true
-    # Convert "image" => "Image".
     -
-      plugin: callback
-      callable: ucfirst
-    # Skip unsupported types.
+      # Our models are: Audio, Binary, Image, Video.
+      # Convert anything not in that list to "binary". (Even "text"?)
+      plugin: static_map
+      map:
+        audio: Audio
+        image: Image
+        video: Video
+      default_value: Binary
+
+  # Extract model from the supplied filename.
+  field_model:
     -
-      plugin: skip_on_value
-      not_equals: true
-      method: row
-      value:
-        - Image
-        - Video
-    # Find a term in the models vocab.
+      # Get a mimetype (eg image/jpeg) from mimetype process plugin.
+      source: file
+      plugin: file_mimetype
     -
+      # Get the type only (strip slash and subtype).
+      plugin: str_replace
+      source: '@_mimetype'
+      search: "#/.*#"
+      replace: ""
+      regex: true
+    -
+      # Our models are: Audio, Binary, Image, Video.
+      # Convert anything not in that list to "binary". (Even "text"?)
+      plugin: static_map
+      map:
+        audio: Audio
+        image: Image
+        video: Video
+      default_value: Binary
+    -
+      # Find a term in the models vocab.
       plugin: entity_lookup
-      source: '@type'
       entity_type: taxonomy_term
       value_key: name
       bundle_key: vid

@@ -47,12 +47,21 @@ process:
     bundle_key: vid
     bundle: islandora_media_use
 
-  # Lookup the migrated file in the file migration.
-  field_media_image:
+  # Run the migration_lookup once only, store the result in _file.
+  _file:
     plugin: migration_lookup
     source: file
     migration: file
     no_stub: true
+
+  # Use _file to populate the various file fields.
+  field_media_audio_file/target_id: '@_file'
+  field_media_file/target_id: '@_file'
+  field_media_image/alt: description
+  field_media_image/target_id: '@_file'
+  field_media_image/title: title
+  field_media_video_file/display: constants/published
+  field_media_video_file/target_id: '@_file'
 
   # Lookup the migrated node in the node migration
   field_media_of:
@@ -60,6 +69,26 @@ process:
     source: file
     migration: node
     no_stub: true
+
+  # Use mimetype to set Islandora media type (bundle).
+  bundle:
+    -
+      source: file
+      plugin: file_mimetype
+    -
+      plugin: str_replace
+      search: "#/.*#"
+      replace: ""
+      regex: true
+    -
+      # Our media types are: audio, image, video.
+      # Convert anything not in that list to "file".
+      plugin: static_map
+      map:
+        audio: audio
+        image: image
+        video: video
+      default_value: file
 
 destination:
   # These are 'image' media we're making.
