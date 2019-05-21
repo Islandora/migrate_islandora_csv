@@ -620,6 +620,10 @@ drush migrate:rollback --group migrate_islandora_csv
 ```
 Your nodes, media, and files would all be gone.  But your subjects and photographers would remain.  If you want to truly and cleanly roll back every entity in a migration, you need to define those migrations and use `migration_lookup` to set entity reference fields.
 
+### Running the media migration
+
+Run `drush migrate:import media --userid=1` from anywhere within the Drupal installation directory. You should now be able to see the media files attached to the nodes you created earlier. At this point, you might want to create Service Files and Thumbnails using the appropriate Drupal actions on the main content admin window. 
+
 ## What have we learned?
 
 If you've made it all the way to the end here, then you've learned that you can migrate files and CSV metadata into Islandora using only yml files.  You've seen how to transform data with pipelines of processing plugins and can handle numeric, text, and entity reference fields.  You can handle multiple values for fields, and even more complicated things like `typed_relation` fields.  And as big as this walkthrough was, we're only scratching the surface of what can be done with the Migrate API.
