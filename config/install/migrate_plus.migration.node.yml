@@ -24,6 +24,9 @@ source:
     # We're tagging our nodes as Images
     model: Image 
 
+    # We're tagging our nodes as Images
+    resource_type: Image
+
     # The 'photographer' MARC relator
     relator: 'relators:pht' 
 
@@ -56,6 +59,14 @@ process:
     value_key: name 
     bundle_key: vid
     bundle: islandora_models 
+
+  field_resource_type:
+    plugin: entity_lookup
+    source: constants/resource_type
+    entity_type: taxonomy_term
+    value_key: name
+    bundle_key: vid
+    bundle: resource_types
 
   # Split up our pipe-delimited string of
   # subjects, and generate terms for each.
