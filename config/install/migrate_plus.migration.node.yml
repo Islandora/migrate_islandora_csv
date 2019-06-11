@@ -48,7 +48,8 @@ process:
   # Dates are EDTF strings
   field_edtf_date: issued
     
-  # Make the object an 'Image'
+  # Make the object an 'Image' (in the Model field).
+  # This value is hard-coded in this configuration.
   field_model:
     plugin: entity_lookup
     source: constants/model
@@ -56,6 +57,16 @@ process:
     value_key: name 
     bundle_key: vid
     bundle: islandora_models 
+
+  # Also populate the "Resrouce type" field from string
+  # values in the 'resource_type' column in the CSV file.
+  field_resource_type:
+    plugin: entity_generate
+    source: resource_type
+    entity_type: taxonomy_term
+    value_key: name
+    bundle_key: vid
+    bundle: resource_types
 
   # Split up our pipe-delimited string of
   # subjects, and generate terms for each.

@@ -1,6 +1,6 @@
-file,title,subtitle,description,issued,subject,photographer
-/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nails Nails Nails.jpg,Nails Nails Nails,,A sign pointing towards a nail salon.,2018-01-01,Neon signs|Night,Clem Onojeghuo
-/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg,Free Smells,We're givin' 'em away,A sign on a restaurant front advertising free smells,2018-02-01,Neon signs|Night|Funny,The Collab
-/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nothing to See Here.jpg,Nothing To See Here,Move Along People,A sign above a building that says "Nothing to see here",2018-03-01,Neon signs|Night,Argelis Rebolledo
-/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Call For Champagne.jpg,Call For Champagne,,A neon sign above some rotary telephones telling customers to call for champagne.,2018-04-01,Drinking|Neon signs,Design Doctor
-/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/This Must Be The Place.jpg,This Must Be The Place,,A neon sign on a multi-colored wall that reads "This Must Be The Place",2018-05-01,Neon signs,Tim Mossholder
+file,title,subtitle,description,issued,subject,photographer,resource_type
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nails Nails Nails.jpg,Nails Nails Nails,,A sign pointing towards a nail salon.,2018-01-01,Neon signs|Night,Clem Onojeghuo,Image
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg,Free Smells,We're givin' 'em away,A sign on a restaurant front advertising free smells,2018-02-01,Neon signs|Night|Funny,The Collab,Image
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nothing to See Here.jpg,Nothing To See Here,Move Along People,A sign above a building that says "Nothing to see here",2018-03-01,Neon signs|Night,Argelis Rebolledo,Image
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Call For Champagne.jpg,Call For Champagne,,A neon sign above some rotary telephones telling customers to call for champagne.,2018-04-01,Drinking|Neon signs,Design Doctor,Image
+/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/This Must Be The Place.jpg,This Must Be The Place,,A neon sign on a multi-colored wall that reads "This Must Be The Place",2018-05-01,Neon signs,Tim Mossholder,Image
