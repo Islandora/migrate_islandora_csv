@@ -433,6 +433,19 @@ Now here's where things get interesting.  We can look up other entities to popul
 
 The `entity_lookup` process plugin looks up an entity based on the configuration you give it.  You use the `entity_type`, `bundle_key`, and `bundle` configurations to limit which entities you search through.  `entity_type` is, as you'd suspect, the type of entity: node, media, file, taxonomy_term, etc...  `bundle_key` tells the migrate framework which property holds the bundle of the entity, and `bundle` is the actual bundle id you want to restrict by. In this case we specify the vid (vocabulary id) has to be `islandora_models` - which is the machine name of the vocabulary we're interested in. In this plugin, `source` is the value to search for - in this case we're looking for the string "Image", which we've defined as a constant.  And we're comparing it to the `name` field on each term by setting the `value_key` config.
 
+This approach applies the same taxonomy term to all objects. If you want to assign a taxonomy term at the node level (that is, potentially a different term for each node) rather than to all the nodes being imported, you can use a configuration as illustrated next. In this example, we have a column in our CSV input file with the header 'model', which we define as the source of the `field_model` values:
+
+```yml
+  field_model:
+    plugin: entity_lookup
+    # 'model' is the header of a field in our input CSV that contains the string value of the taxonomy term.
+    source: model
+    entity_type: taxonomy_term
+    value_key: name 
+    bundle_key: vid
+    bundle: islandora_models
+```
+
 If you're not sure that the entities you're looking up already exist, you can use the `entity_generate` plugin, which takes the same config, but will create a new entity if the lookup fails.  We use this plugin to create `subject` taxonomy terms that we tag our nodes with.  A node can have multiple subjects, so we've encoded them in the CSV as pipe delimited strings.
 
 |subject|
