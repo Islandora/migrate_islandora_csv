@@ -1,4 +1,4 @@
-# Migrating to Islandora CLAW using CSVs
+# Migrating to Islandora 8 using CSVs
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@
 
 ## Summary
 
-This repository, __migrate_islandora_csv__, is a tutorial (this README) that will introduce you to using the Drupal 8 Migrate tools to create Islandora content in CLAW. Whether you will eventually use CSVs or other sources (such as XML or directly from a 7.x Islandora) this tutorial should be useful as it covers the basics and mechanics of migration.
+This repository, __migrate_islandora_csv__, is a tutorial (this README) that will introduce you to using the Drupal 8 Migrate tools to create Islandora content in 8. Whether you will eventually use CSVs or other sources (such as XML or directly from a 7.x Islandora) this tutorial should be useful as it covers the basics and mechanics of migration.
 
 This repository is also a Drupal Feature that, when enabled as a module, will create three example migrations ready for you to use with the Migrate API. Each migration comes from one of the files in the `config/install` folder. We'll walk through them in detail below.
 
@@ -38,18 +38,18 @@ __Why CSV?__ CSV files (whether separated by commas, tabs, or other delimiters) 
 
 In fact, this module is one such Feature. In this README, we'll be inspecting each migration file in detail before running it.  You'll start out by migrating the images themselves first, and then you'll create various Drupal entities to describe the files from the metadata in the CSV. It's not as scary as it sounds (especially since this module contains the data we'll be using in a `data` directory), but you will need a few things before beginning:
 
-1. An instance of Islandora CLAW.  Use [CLAW playbook](https://github.com/Islandora-Devops/claw-playbook) to spin up an environment pre-loaded with all the modules you need (except this one)
+1. An instance of Islandora 8.  Use [Islandora 8 playbook](https://github.com/Islandora-Devops/claw-playbook) to spin up an environment pre-loaded with all the modules you need (except this one)
 1. Some basic command line skills.  You won't need to know much, but you'll have to `vagrant ssh` into the box, navigate into Drupal, and use `git` and `drush`, etc...  If you can copy/paste into a terminal, you'll survive.
 
-A big part of this tutorial relies on the [islandora_demo](https://github.com/Islandora-CLAW/islandora_demo) and [controlled_access_terms_default_configuration](https://github.com/Islandora-CLAW/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_default_configuration) features, which define the default metadata profile for Islandora (which we'll be migrating into).  You're not required to use the `islandora_demo` or `controlled_access_terms_default_configuration` for your repository, but for the purposes of demonstration, it saves you a lot of UI administrivia so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal.
+A big part of this tutorial relies on the [islandora_defaults](https://github.com/Islandora-CLAW/islandora_defaults) and [controlled_access_terms_defaults](https://github.com/Islandora-CLAW/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_defaults) features, which define the default metadata profile for Islandora (which we'll be migrating into). You're not required to use the `islandora_defaults` or `controlled_access_terms_defaults` for your repository, but for the purposes of demonstration, it saves you a lot of UI administrivia so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal.
 
-__A note on using Features__: This process makes heavy use of Features, which is an easy way to ship and install Drupal configuration. However, after enabling a Feature module, the code in that module's directory is no longer "live", as the configuration now resides in the Drupal database. If you change code in the YAML files, it will not take effect until you re-import the Feature. There is a walkthrough in the "Configuration" section of the [Migrate 7.x Claw](https://github.com/Islandora-Devops/migrate_7x_claw) tutorial. 
+__A note on using Features__: This process makes heavy use of Features, which is an easy way to ship and install Drupal configuration. However, after enabling a Feature module, the code in that module's directory is no longer "live", as the configuration now resides in the Drupal database. If you change code in the YAML files, it will not take effect until you re-import the Feature. There is a walkthrough in the "Configuration" section of the [Migrate 7.x to 8](https://github.com/Islandora-Devops/migrate_7x_claw) tutorial. 
 
 ## Overview
 
-The Migrate API is the main way to ingest batches of data into Drupal (and because CLAW is Drupal, into Islandora). The Migrate module only provides the framework, it's up to you to create the rules that take data from a _source_, through a _process_ (i.e. a mapping) to a _destination_. A set of these rules is called a "migration". It has to be set up (in code) and then it has to be run.
+The Migrate API is the main way to ingest batches of data into Drupal (and because Islandora 8 is Drupal, into Islandora). The Migrate module only provides the framework, it's up to you to create the rules that take data from a _source_, through a _process_ (i.e. a mapping) to a _destination_. A set of these rules is called a "migration". It has to be set up (in code) and then it has to be run.
 
-Once a migration has been run, it will have created (or updated) a bunch of Drupal entities of one type - whether that's taxonomy terms, nodes, files, etc. Since an Islandora Object in CLAW is made up of several different Drupal entities that refer to each other, it's going to take multiple migrations to create an Islandora object, and it's important to perform these migrations in a sensible order.
+Once a migration has been run, it will have created (or updated) a bunch of Drupal entities of one type - whether that's taxonomy terms, nodes, files, etc. Since an Islandora Object in Islandora 8 is made up of several different Drupal entities that refer to each other, it's going to take multiple migrations to create an Islandora object, and it's important to perform these migrations in a sensible order.
 
 A basic Islandora object is at minimum:
 - a file, which holds the actual binary contents of an item
@@ -60,7 +60,7 @@ Therefore, each row in your CSV must contain enough information to create these.
 
 However, buried in your descriptive metadata are often references to other things which aren't repostiory items themselves, but records still need to be kept for them.  Authors, publishers, universities, places, etc... can be modelled as Drupal Entities, so that they can be referenced by other Entities.  So there's the potential to have a lot of different entity types described in a single row in a CSV.
 
-In this tutorial, we're working with `islandora_demo` and `controlled_access_terms` entities, and will be migrating five entity types using the three migrations included in this module.
+In this tutorial, we're working with `islandora_defaults` and `controlled_access_terms` entities, and will be migrating five entity types using the three migrations included in this module.
 - file
 - node
 - media
@@ -649,4 +649,4 @@ But really the best thing to do is try and get your data into Islandora!  We int
 
 In some repositories, these CSVs can be used to make bulk updates to metadata. Just make your changes to maintain the CSVs, then run the migration(s) again with the --update flag. This will not always be efficient, as you'll update every entity, even if it didn't change. But, by breaking down your CSVs per collection or object type, you could keep them small enough to use this process for a small repository.
 
-There is also a tool for migrating directly from an Islandora 7.x to CLAW ([migrate_7x_claw](https://github.com/Islandora-Devops/migrate_7x_claw)), using Solr, XPaths, and Fedora calls to pull files and objects directly into CLAW. It may be worth checking out, and/or using in conjunction with a CSV migration.
+There is also a tool for migrating directly from an Islandora 7.x to Islandora 8 ([migrate_7x_claw](https://github.com/Islandora-Devops/migrate_7x_claw)), using Solr, XPaths, and Fedora calls to pull files and objects directly into Islandora 8. It may be worth checking out, and/or using in conjunction with a CSV migration.
