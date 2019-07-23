@@ -289,15 +289,15 @@ There are a lot more process plugins available through the (core) Migrate and Mi
 
 Migrations can be executed via `drush` using the `migrate:import` command.  You specify which migration to run by using the id defined in its yml.  You also need to set parameters to tell drush who you are and what your site's URL is.  Failing to do so will result in derivatives not being generated and malformed/improper RDF. So don't forget them!  To run the file migration from the command line, make sure you're within `/var/www/html/drupal/web` (or any subdirectory) and enter
 ```bash
-drush -y --user-id=1 --uri=localhost:8000 migrate:import file
+drush -y --userid=1 --uri=localhost:8000 migrate:import file
 ```
 If you've already run the migration before, but want to re-run it for any reason, use the `--update` flag.
 ```bash
-drush -y --user-id=1 --uri=localhost:8000 migrate:import file
+drush -y --userid=1 --uri=localhost:8000 migrate:import file
 ```
 You may have noticed that migrations can be grouped, and that they define a `migration_group` in their configuration.  You can execute an entire group of migrations using the `--group` flag.  For example, to run the entire group defined in this module
 ```bash
-drush -y --user-id=1 --uri=localhost:8000 migrate:import --group migrate_islandora_csv
+drush -y --userid=1 --uri=localhost:8000 migrate:import --group migrate_islandora_csv
 ```
 You can also use the `migrate:rollback` command to delete all migrated entities.  Like `migrate:import`, it also respects the `--group` flag and `--uri` parameter.  So to rollback everything we just did:
 ```bash
@@ -531,7 +531,7 @@ Here we're looking at the `photographer` column in the CSV, which contains the n
 
 ### Running the node migration
 
-Like with the file migration, run `drush -y --user-id=1 --uri=http://localhost:8000 migrate:import node` from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
+Like with the file migration, run `drush -y --userid=1 --uri=http://localhost:8000 migrate:import node` from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
 
 ## Migrating Media
 
