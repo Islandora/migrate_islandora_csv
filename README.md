@@ -58,7 +58,7 @@ A basic Islandora object is at minimum:
 
 Therefore, each row in your CSV must contain enough information to create these.
 
-However, buried in your descriptive metadata are often references to other things which aren't repostiory items themselves, but records still need to be kept for them.  Authors, publishers, universities, places, etc... can be modelled as Drupal Entities, so that they can be referenced by other Entities.  So there's the potential to have a lot of different entity types described in a single row in a CSV.
+However, buried in your descriptive metadata are often references to other things which aren't repository items themselves, but records still need to be kept for them.  Authors, publishers, universities, places, etc... can be modelled as Drupal Entities, so that they can be referenced by other Entities.  So there's the potential to have a lot of different entity types described in a single row in a CSV.
 
 In this tutorial, we're working with `islandora_defaults` and `controlled_access_terms` entities, and will be migrating five entity types using the three migrations included in this module.
 - file
@@ -71,7 +71,7 @@ We can do this because subjects and persons are (in this example) represented by
 
 Migrations follow the [Extract-Transform-Load pattern](https://en.wikipedia.org/wiki/Extract,_transform,_load).  You extract the information from a source, process the data to transform it into the format you need, and load it into the destination system (i.e. Drupal).  Migrations are stored in Drupal as configuration, which means they can be represented in yml, transferred to and from different sites, and are compatible with Drupal's configuration synchronization tools. And the structure of each yml file is arranged to follow the Extract-Transform-Load pattern.
 
-To perform the migrations, we'll be using `drush`. We will be able to run each of the file, node, and media migrations seprarately or all at once in a group. We will also learn how to roll back a migration in case it didn't go as planned.
+To perform the migrations, we'll be using `drush`. We will be able to run each of the file, node, and media migrations separately or all at once in a group. We will also learn how to roll back a migration in case it didn't go as planned.
 
 The sample migrations here will give us a chance to show off some techniques for working with multi-valued fields, entity reference fields, and complex field types like `controlled_access_terms`'s `typed_relation` field.  We'll also see how the migrate framework can help de-duplicate, and at the same time, linked data-ize :tm: your data by looking up previously migrated entities.
 
@@ -83,7 +83,7 @@ So hold on to your hats.  First, let's get this puppy onto your Islandora instan
 From your `claw-playbook` directory, issue the following commands to enable this module:
 - `vagrant ssh` to open a shell in your Islandora instance.
 - `cd /var/www/html/drupal/web/modules/contrib` to get to your modules directory.
-- `git clone https://github.com/dannylamb/migrate_islandora_csv` to clone down the repository from github.
+- `git clone https://github.com/dannylamb/migrate_islandora_csv` to clone down the repository from GitHub.
 - `drush en -y migrate_islandora_csv` to enable the module, installing the migrations as configuration.
 
 Optionally, flush the cache (`drush cr`), so the migrations become visible in the GUI at Manage > Structure > Migrations > migrate_islandora_csv (http://localhost:8000/admin/structure/migrate/manage/migrate_islandora_csv/migrations)
@@ -101,7 +101,7 @@ To migrate files (i.e. just the raw binaries) from a CSV, you need:
 
 This tutorial assumes you're working with the sample images provided in the module, which will be located at `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images`. When you're migrating for real, the files will have to be uploaded or otherwise made accessible to the server before this point.
 
-Open up the csv file at `data/migration.csv` and you'll see a `file` column containing paths to the sample images. You can use your favourite shell-based utility to open it at `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/migration.csv`, or browse to it on Github, or just look at it pasted below as this tutorial does not require you to edit the files.
+Open up the CSV file at `data/migration.csv` and you'll see a `file` column containing paths to the sample images. You can use your favourite shell-based utility to open it at `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/migration.csv`, or browse to it on GitHub, or just look at it pasted below as this tutorial does not require you to edit the files.
 
 |file|
 |----|
@@ -127,13 +127,13 @@ source:
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1 
 
-  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  # Each migration needs a unique key per row in the CSV.  Here we're using the file path.
   keys: 
     - file 
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
-    # Islandora uses flysystem and stream wrappers to work with files.  What we're really saying here is
+    # Islandora uses Flysystem and stream wrappers to work with files.  What we're really saying here is
     # to put these files in Fedora in a 'csv_migration' folder.  It doesn't matter if the directory
     # doesn't exist yet, it will get created for you automatically.
     destination_dir: 'fedora://csv_migration' 
@@ -164,7 +164,7 @@ process:
       - '@filename'
 
   ##
-  # Here's where we copy the file over and set the uri of the file entity.
+  # Here's where we copy the file over and set the URI of the file entity.
   ##
   uri:
     plugin: file_copy
@@ -224,9 +224,9 @@ In the `process` section of the migration, we're copying the images over into a 
       - file
       - '@destination'  
 ```
-To do this, we're using the `file_copy` process plugin.  But to use it, we have to know where a file is located and where we it want it copied to.  We know where the file resides, we have that in the CSV's `file` column.  But we're going to have to do some string manipuation in order to generate the new location where we want the file copied. We're trying to convert something like `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg` to `fedora://csv_migration/Free Smells.jpg`.
+To do this, we're using the `file_copy` process plugin.  But to use it, we have to know where a file is located and where we it want it copied to.  We know where the file resides, we have that in the CSV's `file` column.  But we're going to have to do some string manipulation in order to generate the new location where we want the file copied. We're trying to convert something like `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg` to `fedora://csv_migration/Free Smells.jpg`.
 
-The uri we're constructing is a stream wrapper of the form `scheme://path/to/file`.  Islandora uses `flysystem`, which allows for integration with many different types of filesystems, both remote and local.  With `flysystem`, the scheme part of the uri is the name of a filesystem.  By default, Fedora is exposed using the scheme `fedora://`.  So by setting uri to `fedora://csv_migration/Free Smells.jpg`, we're saying "put Free Smells.jpg in the csv_migration directory in Fedora."
+The URI we're constructing is a stream wrapper of the form `scheme://path/to/file`.  Islandora uses `Flysystem`, which allows for integration with many different types of filesystems, both remote and local.  With `Flysystem`, the scheme part of the URI is the name of a filesystem.  By default, Fedora is exposed using the scheme `fedora://`.  So by setting uri to `fedora://csv_migration/Free Smells.jpg`, we're saying "put Free Smells.jpg in the csv_migration directory in Fedora."
 
 Now, to perform this string manipulation in PHP, we'd do something like
 
@@ -252,7 +252,7 @@ To start, we'll get the filename using two process plugins, which do the same st
 ```
 The first process plugin, `callback`, lets you execute any PHP function that takes a single input and returns an output.  It's not as flexible as making your own custom process plugin, but it's still pretty useful in a lot of situations.  Here we're using it to call `pathinfo()`, telling it to use the `file` column in the CSV as input.  We pass the resulting array from `pathinfo()` to the `extract` process plugin, which pulls data out of arrays using the keys you provide it under `index`.
 
-Now that we have the file name, we have to prepend it with `fedora://csv_migration/` to make the destination uri.  In our PHP code above, we used `.` to concatenate the strings.  In the migration framework, we use the `concat` process plugin.  You provide it with two or more strings to concatenate, as well as a delimiter.
+Now that we have the file name, we have to prepend it with `fedora://csv_migration/` to make the destination URI.  In our PHP code above, we used `.` to concatenate the strings.  In the migration framework, we use the `concat` process plugin.  You provide it with two or more strings to concatenate, as well as a delimiter.
 
 ```yml
   destination:
@@ -273,7 +273,7 @@ In our PHP code, we concatenated the `$filename` variable with a string literal.
       - 'fedora://csv_migration'
       - '@filename'
 ```
-That's because the migrate framework only interprets `source` values as names of columns from the csv or names of other process steps.  Even if they're wrapped in quotes.  It will never try to use the string directly as a value.  To circumvent this, we decare a constant in the `source` section of the migration config.
+That's because the migrate framework only interprets `source` values as names of columns from the CSV or names of other process steps.  Even if they're wrapped in quotes.  It will never try to use the string directly as a value.  To circumvent this, we declare a constant in the `source` section of the migration config.
 
 ```yml
   constants:
@@ -287,7 +287,7 @@ There are a lot more process plugins available through the (core) Migrate and Mi
 
 ### Running the File Migration
 
-Migrations can be executed via `drush` using the `migrate:import` command.  You specify which migration to run by using the id defined in its yml.  You also need to set parameters to tell drush who you are and what your site's URL is.  Failing to do so will result in derivatives not being generated and malformed/improper RDF. So don't forget them!  To run the file migration from the command line, make sure you're within `/var/www/html/drupal/web` (or any subdirectory) and enter
+Migrations can be executed via `drush` using the `migrate:import` command.  You specify which migration to run by using the id defined in its yml.  You also need to set parameters to tell Drush who you are and what your site's URL is.  Failing to do so will result in derivatives not being generated and malformed/improper RDF. So don't forget them!  To run the file migration from the command line, make sure you're within `/var/www/html/drupal/web` (or any subdirectory) and enter
 ```bash
 drush -y --userid=1 --uri=localhost:8000 migrate:import file
 ```
@@ -403,7 +403,7 @@ destination:
 ```
 __The Breakdown__
 
-The `source` section looks mostly the same other than some different constants we're defining - the string "Image" (no quotes needed) and 'relators:pht' (quotes needed beacuse of the colon).
+The `source` section looks mostly the same other than some different constants we're defining - the string "Image" (no quotes needed) and 'relators:pht' (quotes needed because of the colon).
 
 If you look at the `process` section, you can see we're taking the `title`, `description`, and `issued` columns from the CSV and applying them directly to the migrated nodes without any manipulation.
 ```yml
@@ -425,7 +425,7 @@ Now here's where things get interesting.  We can look up other entities to popul
     plugin: entity_lookup
     source: constants/model
     entity_type: taxonomy_term
-    # 'name' is the string value of the term, e.g. 'Original file', 'Thumnbnail'.
+    # 'name' is the string value of the term, e.g. 'Original file', 'Thumbnail'.
     value_key: name 
     bundle_key: vid
     bundle: islandora_models
@@ -512,7 +512,7 @@ In `controlled_access_terms`, we have a notion of a `typed_relation`, which is a
 [ 'target_id' => 1, 'rel_type' => 'relators:ctb']
 ```
 
-The `target_id` portion takes an entity id, and rel_type takes the predicate for the marc relator we want to use to describe the relationship the entity has with the repository item.  This example would reference taxonomy_term 1 and give it the relator for "Contributor".
+The `target_id` portion takes an entity id, and rel_type takes the predicate for the MARC relator we want to use to describe the relationship the entity has with the repository item.  This example would reference taxonomy_term 1 and give it the relator for "Contributor".
 
 If we want to set those values in yml, we can access `target_id` and `rel_type` independently by accessing them with a `/`. 
 ```yml
@@ -531,11 +531,11 @@ Here we're looking at the `photographer` column in the CSV, which contains the n
 
 ### Running the node migration
 
-Like with the file migration, run `drush -y --userid=1 --uri=http://localhost:8000 migrate:import node` from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The csv metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
+Like with the file migration, run `drush -y --userid=1 --uri=http://localhost:8000 migrate:import node` from anywhere within the Drupal installation directory will fire off the migration.  Go to http://localhost:8000/admin/content and you should see five new nodes.  Click on one, though, and you'll see it's just a stub with metadata.  The CSV metadata is there, links to other entities like subjects and photographers are there, but there's no trace of the corresponding files.  Here's where media entities come into play.
 
 ## Migrating Media
 
-Media entities are Drupal's solution for fieldable files.  Since you can't put fields on a file, what you can do is wrap the file with a Media entity. In addition to a reference to the file (binary), technical metadata and structural metadata for the file go on the Media entity (e.g.  mimetype, file size, resolution).  Media also have a few special fields that are required for Islandora, `field_media_of` and `field_use`, which denote what node owns the media and what role the media serves, repectively.  Since the Media entity references both the file it wraps and the node that owns it, Media entities act as a bridge between files and nodes, tying them together.  And to do this, we make use of one last process plugin, `migration_lookup`.  Open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.media.yml` and give it a look.
+Media entities are Drupal's solution for fieldable files.  Since you can't put fields on a file, what you can do is wrap the file with a Media entity. In addition to a reference to the file (binary), technical metadata and structural metadata for the file go on the Media entity (e.g.  MIME type, file size, resolution).  Media also have a few special fields that are required for Islandora, `field_media_of` and `field_use`, which denote what node owns the media and what role the media serves, respectively.  Since the Media entity references both the file it wraps and the node that owns it, Media entities act as a bridge between files and nodes, tying them together.  And to do this, we make use of one last process plugin, `migration_lookup`.  Open up `/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/config/install/migrate_plus.migration.media.yml` and give it a look.
 
 ```yml
 # Uninstall this config when the feature is uninstalled
@@ -627,7 +627,7 @@ The `field_media_use` field is a tag that's used to denote the purpose of a file
 ```
 The `field_media_image` and `field_media_of` fields are how the media binds a file to a node.  You could use `entity_lookup` or `entity_generate`, but we've already migrated them and can very easily look them up by the id assigned to them during migration.  But what's the benefit of doing so?  The `entity_lookup` and `entity_generate` process plugins do the job fine, right?
 
-The main advantage of using `migration_lookup` and defining migrations whenever possible, is that migrated entites can be rolled back.  If you were to hop into your console and execute
+The main advantage of using `migration_lookup` and defining migrations whenever possible, is that migrated entities can be rolled back.  If you were to hop into your console and execute
 ```bash
 drush -y --uri=http://localhost:8000 migrate:rollback --group migrate_islandora_csv
 ```
@@ -645,7 +645,7 @@ If you've made it all the way to the end here, then you've learned that you can 
 
 There's certainly more you can do with Drupal 8's Migrate API.  There's a plethora of source and processing plugins out there that can handle pretty much anything you throw at it.  XML and JSON are fair game.  You can also request sources using HTTP, so you can always point it at an existing systems REST API and go from there.  If you can't make the Migrate API's existing workflow make the necessary changes to your data, you can expand its capabilities by writing your own process plugins. Reading the Drupal.org documentation on the [Migrate API](https://www.drupal.org/docs/8/api/migrate-api) would be a good place to start.
 
-But really the best thing to do is try and get your data into Islandora!  We intend to create a `boilerplate` branch of this repository that will allow you to clone down a migration template, ready for you to customize to fit your data.  And as you assemble it into CSV format, keep in mind that if you have more than just names for things like subjects and authors, that you can always make more CSVs.  Think of it like maintaining tables in an SQL database.  Each CSV has unique keys, so you can lookup/join entiities between CSVs using those keys.  And you can still pipe-delimit the keys like we did in our example to handle multi-valued fields.
+But really the best thing to do is try and get your data into Islandora!  We intend to create a `boilerplate` branch of this repository that will allow you to clone down a migration template, ready for you to customize to fit your data.  And as you assemble it into CSV format, keep in mind that if you have more than just names for things like subjects and authors, that you can always make more CSVs.  Think of it like maintaining tables in an SQL database.  Each CSV has unique keys, so you can lookup/join entities between CSVs using those keys.  And you can still pipe-delimit the keys like we did in our example to handle multi-valued fields.
 
 In some repositories, these CSVs can be used to make bulk updates to metadata. Just make your changes to maintain the CSVs, then run the migration(s) again with the --update flag. This will not always be efficient, as you'll update every entity, even if it didn't change. But, by breaking down your CSVs per collection or object type, you could keep them small enough to use this process for a small repository.
 
