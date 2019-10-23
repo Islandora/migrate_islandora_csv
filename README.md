@@ -38,10 +38,10 @@ __Why CSV?__ CSV files (whether separated by commas, tabs, or other delimiters) 
 
 In fact, this module is one such Feature. In this README, we'll be inspecting each migration file in detail before running it.  You'll start out by migrating the images themselves first, and then you'll create various Drupal entities to describe the files from the metadata in the CSV. It's not as scary as it sounds (especially since this module contains the data we'll be using in a `data` directory), but you will need a few things before beginning:
 
-1. An instance of Islandora 8.  Use [Islandora 8 playbook](https://github.com/Islandora-Devops/claw-playbook) to spin up an environment pre-loaded with all the modules you need (except this one)
+1. An instance of Islandora 8.  Use [Islandora 8 playbook](https://github.com/Islandora-Devops/islandora-playbook) to spin up an environment pre-loaded with all the modules you need (except this one)
 1. Some basic command line skills.  You won't need to know much, but you'll have to `vagrant ssh` into the box, navigate into Drupal, and use `git` and `drush`, etc...  If you can copy/paste into a terminal, you'll survive.
 
-A big part of this tutorial relies on the [islandora_defaults](https://github.com/Islandora-CLAW/islandora_defaults) and [controlled_access_terms_defaults](https://github.com/Islandora-CLAW/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_defaults) features, which define the default metadata profile for Islandora (which we'll be migrating into). You're not required to use the `islandora_defaults` or `controlled_access_terms_defaults` for your repository, but for the purposes of demonstration, it saves you a lot of UI administrivia so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal.
+A big part of this tutorial relies on the [islandora_defaults](https://github.com/Islandora/islandora_defaults) and [controlled_access_terms_defaults](https://github.com/Islandora/controlled_access_terms/tree/8.x-1.x/modules/controlled_access_terms_defaults) features, which define the default metadata profile for Islandora (which we'll be migrating into). You're not required to use the `islandora_defaults` or `controlled_access_terms_defaults` for your repository, but for the purposes of demonstration, it saves you a lot of UI administrivia so you can focus just on the learning how to migrate.  By the time you are done with this exercise, you'll be able to easily apply your knowledge to migrate using any custom metadata profile you can build using Drupal.
 
 __A note on using Features__: This process makes heavy use of Features, which is an easy way to ship and install Drupal configuration. However, after enabling a Feature module, the code in that module's directory is no longer "live", as the configuration now resides in the Drupal database. If you change code in the YAML files, it will not take effect until you re-import the Feature. There is a walkthrough in the "Configuration" section of the [Migrate 7.x to 8](https://github.com/Islandora-Devops/migrate_7x_claw) tutorial. 
 
@@ -80,7 +80,7 @@ So hold on to your hats.  First, let's get this puppy onto your Islandora instan
 
 ## Installation
 
-From your `claw-playbook` directory, issue the following commands to enable this module:
+From your `islandora-playbook` directory, issue the following commands to enable this module:
 - `vagrant ssh` to open a shell in your Islandora instance.
 - `cd /var/www/html/drupal/web/modules/contrib` to get to your modules directory.
 - `git clone https://github.com/dannylamb/migrate_islandora_csv` to clone down the repository from GitHub.
@@ -419,7 +419,7 @@ For `subtitle`, we're passing it through the `skip_on_empty` process plugin beca
     method: process
 ```
 
-Now here's where things get interesting.  We can look up other entities to populate entity reference fields.  For example, all Repository Items have an entity reference field that holds a taxonomy term from the `islandora_models` vocabulary.  All of our examples are images, so we'll look up the Image model in the vocabulary since it already exists (it gets made for you when you use claw-playbook).  We use the `entity_lookup` process plugin to do this.
+Now here's where things get interesting.  We can look up other entities to populate entity reference fields.  For example, all Repository Items have an entity reference field that holds a taxonomy term from the `islandora_models` vocabulary.  All of our examples are images, so we'll look up the Image model in the vocabulary since it already exists (it gets made for you when you use islandora-playbook).  We use the `entity_lookup` process plugin to do this.
 ```yml
   field_model:
     plugin: entity_lookup
