@@ -1,4 +1,4 @@
-# ![Alt text](Mascot Image) Migrating to Islandora 8 using CSVs
+# ![Mascot](https://user-images.githubusercontent.com/2371345/67424058-caac1a00-f5ab-11e9-99a2-c9360370391f.png) Migrating to Islandora 8 using CSVs
 
 [![Build Status][1]](https://travis-ci.com/Islandora/migrate_islandora_csv)
 [![Contribution Guidelines][2]](./CONTRIBUTING.md)
