@@ -63,6 +63,9 @@ If you would like to contribute, please get involved by attending our weekly [Te
 
 If you would like to contribute code to the project, you need to be covered by an Islandora Foundation [Contributor License Agreement](http://islandora.ca/sites/default/files/islandora_cla.pdf) or [Corporate Contributor License Agreement](http://islandora.ca/sites/default/files/islandora_ccla.pdf). Please see the [Contributors](http://islandora.ca/resources/contributors) pages on Islandora.ca for more information.
 
+[2]: http://img.shields.io/badge/CONTRIBUTING-Guidelines-blue.svg
+[3]: https://img.shields.io/badge/license-GPLv2-blue.svg?style=flat-square
+
 We recommend using the [islandora-playbook](https://github.com/Islandora-Devops/islandora-playbook) to get started.
 
 ## License
