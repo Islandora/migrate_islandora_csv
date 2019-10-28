@@ -180,7 +180,11 @@ destination:
 
 ### Anatomy of a Migration
 
-It seems like a lot to take in at first, but there's a pattern to Drupal migrations.  They always contain three key sections: `source`, `process`, and `destination`.  And these sections correspond exactly to Extract, Transform, and Load.
+It seems like a lot to take in at first, but there's a pattern to Drupal migrations.  They always contain core identification information and three key sections: `source`, `process`, and `destination`.  And these sections correspond exactly to Extract, Transform, and Load.
+
+#### Identification
+
+The first section of a migration contains metadata for Drupal about the migration itself. The `id` parameter is the machine name of this migration, and must not conflict with existing migrations. *Note: use alphanumeric characters and underscores. Hyphens (-) will cause the migration to fail.* The `label` is a human-readable string to identify this migration, and the `migration_group` is where this migration will be grouped in the GUI.
 
 #### Source
 
