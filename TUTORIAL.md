@@ -47,7 +47,7 @@ __A note on using Features__: This process makes heavy use of Features, which is
 
 ## Overview
 
-The Migrate API is the main way to ingest batches of data into Drupal (and because Islandora 8 is Drupal, into Islandora). The Migrate module only provides the framework, it's up to you to create the rules that take data from a _source_, through a _process_ (i.e. a mapping) to a _destination_. A set of these rules is called a "migration". It has to be set up (in code) and then it has to be run.
+The Migrate API is the main way to ingest batches of data into Drupal (and because Islandora 8 is Drupal, into Islandora). The Migrate module only provides the framework, it's up to you to create the rules that take data from a _source_, through a _process_ (i.e. a mapping) to a _destination_. A set of these rules is called a "migration". It has to be set up (as a Configuration Entity, either by importing a YML file or by installing a Feature) and then it has to be run.
 
 Once a migration has been run, it will have created (or updated) a bunch of Drupal entities of one type - whether that's taxonomy terms, nodes, files, etc. Since an Object in Islandora 8 is made up of several different Drupal entities that refer to each other, it's going to take multiple migrations to create an Islandora object, and it's important to perform these migrations in a sensible order.
 
