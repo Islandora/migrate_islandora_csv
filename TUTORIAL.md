@@ -30,7 +30,9 @@ This repository is also a Drupal Feature that, when enabled as a module, will cr
 
 This repository also contains a `data` folder containing a CSV and sample images, as a convenience so that the accompanying files are easily available on the Drupal server running the migration. (This is not the recommended method for making files available to Drupal in a real migration.)
 
-When you are ready to create your actual migrations, this repository can function as a template for you to create the yml files defining your own migrations.
+And, at the moment, this repository contains a Migrate process plugin that transforms strings into associative arrays. This is useful for populating multiple Linked Agent fields. It will be available when this module is enabled, and the node migration uses it. It was written generically and will hpefully become part of Migrate Plus, but for now it is here.
+
+When you are ready to create your actual migrations, the contents of this repository can function as a template for you to create the yml files defining your own migrations.
 
 ## Introduction
 
@@ -60,14 +62,15 @@ Therefore, each row in your CSV must contain enough information to create these.
 
 However, buried in your descriptive metadata are often references to other things which aren't repository items themselves, but records still need to be kept for them.  Authors, publishers, universities, places, etc... can be modelled as Drupal Entities, so that they can be referenced by other Entities.  So there's the potential to have a lot of different entity types described in a single row in a CSV.
 
-In this tutorial, we're working with `islandora_defaults` and `controlled_access_terms` entities, and will be migrating five entity types using the three migrations included in this module.
+In this tutorial, we're working with `islandora_defaults` and `controlled_access_terms` entities, and will be migrating six entity types using the three migrations included in this module.
 - file
 - node
 - media
 - subject
 - person
+- corporate_body
 
-We can do this because subjects and persons are (in this example) represented by simple 'name' strings. We create them on the fly, as if we were adding new tags to a tag vocabulary. If we wanted to model subjects or people as entities with multiple fields (first name, last name, date, subheadings, etc.) then we would need five migrations.
+We can do this because subjects, persons, and corporate bodies are (in this example) represented by simple 'name' strings. We create them on the fly, as if we were adding new tags to a tag vocabulary. If we wanted to model subjects, people, or corporate bodies as entities with multiple fields (first name, last name, date, subheadings, URI, etc.) then we would need up to six migrations.
 
 Migrations follow the [Extract-Transform-Load pattern](https://en.wikipedia.org/wiki/Extract,_transform,_load).  You extract the information from a source, process the data to transform it into the format you need, and load it into the destination system (i.e. Drupal).  Migrations are stored in Drupal as configuration, which means they can be represented in yml, transferred to and from different sites, and are compatible with Drupal's configuration synchronization tools. And the structure of each yml file is arranged to follow the Extract-Transform-Load pattern.
 
@@ -206,7 +209,7 @@ You can see we provide a path to its location, what delimiter to use, if it uses
 
 We're going to dive into the details of this step below, but in summary: the `process` section is where we extract the desired bits from that row, transform them as desired, and populate them into an associative array. This section is a series of named steps, that call one or more process plugins. These plugins are executed in sequence, with the results getting passed from one to the next, forming a pipeline. By the end of the step, you have transformed some element of data (perhaps through text manipulation, concatenation, etc...) into the form that Drupal is expecting. The resulting value gets associated with the name of the step.
 
-If the name of a step is the same as a field or property name on the target entity, the migrated entity will have that value for that field or property.  This is how you can apply metadata from the CSV to an entity.  If the step name is not the name of a field or property on the target entity, the migrate framework assumes it's a temporary value you're using as part of more complex logic.  It won't wind up on the entity when the migration is done, but it will be available for you to use within other process plugins.  You can always spot when a temporary value is being used by the fact that it's prefixed with an `@`.  You can also pass constants into process plugins, which are prefixed with `constants/`.
+If the name of a step is the same as a field or property name on the target entity, the migrated entity will have that value for that field or property.  This is how you can apply metadata from the CSV to an entity.  If the step name is not the name of a field or property on the target entity, the migrate framework assumes it's a temporary value you're using as part of more complex logic.  It won't wind up on the entity when the migration is done, but it will be available for you to use within other process plugins.  You can always spot when a temporary value is being used by the fact that it's prefixed with an `@` and surrounded by quotes.  You can also pass constants into process plugins, which are prefixed with `constants/`.
 
 #### Destination
 
@@ -329,20 +332,29 @@ id: node
 label: Import Nodes from CSV 
 migration_group: migrate_islandora_csv
 
-# Pull from a CSV, and use the 'file' column as an index
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
+
+  # 1 means you have a header row, 0 means you don't
   header_row_count: 1
+
+  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
   keys:
     - file 
+
+  # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
+    # We're tagging our nodes as Images
     model: Image 
-    relator: 'relators:pht' 
+
+    # Everything gets created as admin
+    uid: 1
 
 # Set fields using values from the CSV
 process:
   title: title
+  uid: constants/uid
 
   # We use the skip_on_empty plugin because
   # not every row in the CSV has subtitle filled
@@ -356,7 +368,7 @@ process:
 
   # Dates are EDTF strings
   field_edtf_date: issued
-    
+
   # Make the object an 'Image'
   field_model:
     plugin: entity_lookup
@@ -383,22 +395,96 @@ process:
       bundle_key: vid
       bundle: subject
 
-  # Complex fields can have their individual
-  # parts set independently.  Use / to denote
-  # you're working with a property of a field
-  # directly.
-  field_linked_agent/target_id:
-    plugin: entity_generate
-    source: photographer 
-    entity_type: taxonomy_term
-    value_key: name
-    bundle_key: vid
-    bundle: person 
+  # If you have multiple values of a complex
+  # field, iterate over them using sub_process.
+  # But sub_process requires structured data
+  # i.e. an associative array, not a string
+  # or list of strings. To turn strings into
+  # associative arrays, use the custom
+  # process plugin str_to_assoc.
 
-  # Hard-code the rel_type to photographer
-  # for all the names in the photographer
-  # column.
-  field_linked_agent/rel_type: constants/relator
+  # Extract a list of names from the column
+  # called photographer, and transform it into
+  # an array of associative arrays.
+  photographers:
+    -
+      source: photographer
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+
+  # Iterate over the array of associative arrays.
+  # We create the taxonomy terms here so that we
+  # can specify the bundle - other columns which
+  # might feed into Linked Agent may contain
+  # corporate bodies or families. The resulting
+  # array contains the resulting term id (tid)
+  # under the key 'target_id'.
+  # We also add a key-value pair
+  # 'rel_type' => 'relators:pht'. Other columns
+  # might use different relators.
+  linked_agent_pht:
+    plugin: sub_process
+    source: '@photographers'
+    process:
+      target_id:
+        plugin: entity_generate
+        source: name
+        entity_type: taxonomy_term
+        value_key: name
+        bundle_key: vid
+        bundle: person
+      rel_type:
+        plugin: default_value
+        default_value: 'relators:pht'
+
+  # Extract an array of names from the column
+  # called provider
+  providers:
+    -
+      source: provider
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+  # Generate/lookup taxonomy terms in the
+  # corporate body vocab, and add the relator.
+  linked_agent_prv:
+    plugin: sub_process
+    source: '@providers'
+    process:
+      target_id:
+        plugin: entity_generate
+        source: name
+        entity_type: taxonomy_term
+        value_key: name
+        bundle_key: vid
+        bundle: 'corporate_body'
+      rel_type:
+        plugin: default_value
+        default_value: 'relators:prv'
+
+  # Write to the linked agent field. In this case
+  # we first want to merge the info from the
+  # photographer and provider columns. Since we 
+  # already prepared our structured array using
+  # the components of the typed_relation field as 
+  # keys ('target_id' and 'rel_type'), we can just
+  # pass this array into field_linked_agent.
+  field_linked_agent:
+    plugin: merge
+    source:
+      - '@linked_agent_pht'
+      - '@linked_agent_prv'
 
 # We're making nodes
 destination:
@@ -407,7 +493,7 @@ destination:
 ```
 __The Breakdown__
 
-The `source` section looks mostly the same other than some different constants we're defining - the string "Image" (no quotes needed) and 'relators:pht' (quotes needed because of the colon).
+The `source` section looks mostly the same other than some different constants we're defining - the string "Image" (no quotes needed) and the drupal ID of the user who will be assigned as the author. If values contained special characters such as colons, quotes would be needed.
 
 If you look at the `process` section, you can see we're taking the `title`, `description`, and `issued` columns from the CSV and applying them directly to the migrated nodes without any manipulation.
 ```yml
@@ -509,16 +595,16 @@ $node->set('field_color', [
 ]);
 ```
 
-In the migrate framework, you have two options for handling these types of fields.  You can build up the full array they're expecting, which is difficult and often impossible to do without writing a custom process plugin. Or you set each named value in the field with separate process pipelines.
+In the migrate framework, you have two options for handling these types of fields.  You can build up the full array they're expecting, which is difficult and requires a custom process plugin. Or, if you only have one value going into a complex field, you can set each named component in the field with separate process pipelines.
 
-In `controlled_access_terms`, we have a notion of a `typed_relation`, which is an entity reference coupled with a MARC relator.  It expects an associative array that looks like this:
+In `controlled_access_terms`, we define a new field type of `typed_relation`, which is an entity reference coupled with a MARC relator.  It expects an associative array that looks like this:
 ```php
 [ 'target_id' => 1, 'rel_type' => 'relators:ctb']
 ```
 
 The `target_id` portion takes an entity id, and rel_type takes the predicate for the MARC relator we want to use to describe the relationship the entity has with the repository item.  This example would reference taxonomy_term 1 and give it the relator for "Contributor".
 
-If we want to set those values in yml, we can access `target_id` and `rel_type` independently by accessing them with a `/`. 
+If we have a single name to deal with, we can set those values in yml, accessing `field_linked_agent/target_id` and `field_linked_agent/rel_type` independently. 
 ```yml
   field_linked_agent/target_id:
     plugin: entity_generate
@@ -531,7 +617,77 @@ If we want to set those values in yml, we can access `target_id` and `rel_type` 
   field_linked_agent/rel_type: constants/relator
 ```
 
-Here we're looking at the `photographer` column in the CSV, which contains the names of the photographers that captured these images.  Since we know these are photographers, and not publishers or editors, we can bake in the `relator` constant we set to `relators:pht` in the `source` section of the migration.  So all that's left to do is to set the taxonomy term's id via `entity_generate`.  If the lookup succeeds, the id is returned.  If it fails, a term is created and its id is returned.  In the end, by using the `/` syntax to set properties on complex fields, everything gets wrapped up into that nice associative array structure for you automatically.  Now let's run that migration.
+Here we're looking at the `photographer` column in the CSV, which contains the names of the photographers that captured these images.  Since we know these are photographers, and not publishers or editors, we can bake in the `relator` constant we set to `relators:pht` in the `source` section of the migration.  So all that's left to do is to set the taxonomy term's id via `entity_generate`.  If the lookup succeeds, the id is returned.  If it fails, a term is created and its id is returned.  In the end, by using the `/` syntax to set properties on complex fields, everything gets wrapped up into that nice associative array structure for you automatically.
+
+However, if you have multiple names, and/or multiple columns that contain values that will go into the same `typed_relation` field, you do need to build up a full array of structured data.
+
+We start by extracting the values in the `photographer` column, and busting them into a list. (In this case, given the sample data, the lists will all have length 1). Then, we use a custom process plugin to make each value the value in an associative array (see example data below).
+
+```yml
+  photographers:
+    -
+      source: photographer
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+```
+
+So, if we started with a column containing
+```php
+'Alice|Bob|Charlie'
+```
+at the end of this pipeline, the `photographers` temporary variable would contain
+```php
+[ 
+  ['name' => 'Alice'],
+  ['name' => 'Bob'],
+  ['name' => 'Charlie]
+]
+```
+
+Next, we use the `sub_process` plugin. It takes an array of associative arrays (as seen above) and iterates over them. From within subprocess' `process` parameter, you can access only what's defined in that associative array. Here, when we do our `entity_generate` lookup, our source is `name`, the (only) key in that array.
+```yml
+  linked_agent_pht:
+    plugin: sub_process
+    source: '@photographers'
+    process:
+      target_id:
+        plugin: entity_generate
+        source: name
+        entity_type: taxonomy_term
+        value_key: name
+        bundle_key: vid
+        bundle: person
+      rel_type:
+        plugin: default_value
+        default_value: 'relators:pht'
+
+```
+Within `sub_process`, we cannot access the temporary variables or constants that we've created in the outer migration. This is why we use the `default_value` plugin when for the `rel_type`. It would have been simpler to define a constant as we did with 'Image', but we wouldn't be able to access it. The output of this pipeline is now formatted as the structured data expected by a `typed_relation` field:
+```php
+[ 
+  ['target_id' => 42, 'rel_type': 'relators:pht' ],
+  ['target_id' => 43, 'rel_type': 'relators:pht' ],
+  ['target_id' => 44, 'rel_type': 'relators:pht' ],
+]
+```
+The final step will be to assign this array to the Linked Agent field. But first, we repeat the process for another column, which contains names that have a different relator, and a different bundle. Finally, we merge the two temporary variables and pass the result to `field_linked_agent`. We don't have to assign the sub-components of `field_linked_agent` here, because this is already the structured data it is looking for.
+
+```yml
+  field_linked_agent:
+    plugin: merge
+    source:
+      - '@linked_agent_pht'
+      - '@linked_agent_prv'
+```
+
+Clear as mud? Great.  Now let's run that migration.
+
 
 ### Running the node migration
 
