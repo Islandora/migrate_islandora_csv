@@ -133,7 +133,7 @@ process:
       plugin: str_to_assoc
       key: 'name'
   # Generate/lookup taxonomy terms in the
-  # corporate body vocab, and add the relator.
+  # corporate body vocab, and add the rel_type.
   linked_agent_prv:
     plugin: sub_process
     source: '@providers'

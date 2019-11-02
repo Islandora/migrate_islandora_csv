@@ -671,9 +671,9 @@ Next, we use the `sub_process` plugin. It takes an array of associative arrays (
 Within `sub_process`, we cannot access the temporary variables or constants that we've created in the outer migration. This is why we use the `default_value` plugin when for the `rel_type`. It would have been simpler to define a constant as we did with 'Image', but we wouldn't be able to access it. The output of this pipeline is now formatted as the structured data expected by a `typed_relation` field:
 ```php
 [ 
-  ['target_id' => 42, 'rel_type': 'relators:pht' ],
-  ['target_id' => 43, 'rel_type': 'relators:pht' ],
-  ['target_id' => 44, 'rel_type': 'relators:pht' ],
+  ['target_id' => 42, 'rel_type'=> 'relators:pht' ],
+  ['target_id' => 43, 'rel_type'=> 'relators:pht' ],
+  ['target_id' => 44, 'rel_type'=> 'relators:pht' ],
 ]
 ```
 The final step will be to assign this array to the Linked Agent field. But first, we repeat the process for another column, which contains names that have a different relator, and a different bundle. Finally, we merge the two temporary variables and pass the result to `field_linked_agent`. We don't have to assign the sub-components of `field_linked_agent` here, because this is already the structured data it is looking for.
