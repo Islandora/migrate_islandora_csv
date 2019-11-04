@@ -30,7 +30,7 @@ This repository is also a Drupal Feature that, when enabled as a module, will cr
 
 This repository also contains a `data` folder containing a CSV and sample images, as a convenience so that the accompanying files are easily available on the Drupal server running the migration. (This is not the recommended method for making files available to Drupal in a real migration.)
 
-And, at the moment, this repository contains a Migrate process plugin that transforms strings into associative arrays. This is useful for populating multiple Linked Agent fields. It will be available when this module is enabled, and the node migration uses it. It was written generically and will hpefully become part of Migrate Plus, but for now it is here.
+And, at the moment, this repository contains a Migrate process plugin that transforms strings into associative arrays. This is useful for populating multiple Linked Agent fields. It will be available when this module is enabled, and the node migration uses it. It was written generically and will hopefully become part of Migrate Plus, but for now it is here.
 
 When you are ready to create your actual migrations, the contents of this repository can function as a template for you to create the yml files defining your own migrations.
 
