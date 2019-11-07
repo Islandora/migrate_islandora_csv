@@ -24,9 +24,6 @@ source:
     # We're tagging our nodes as Images
     model: Image 
 
-    # The 'photographer' MARC relator
-    relator: 'relators:pht' 
-
     # Everything gets created as admin
     uid: 1
 
@@ -47,7 +44,7 @@ process:
 
   # Dates are EDTF strings
   field_edtf_date: issued
-    
+
   # Make the object an 'Image'
   field_model:
     plugin: entity_lookup
@@ -74,22 +71,96 @@ process:
       bundle_key: vid
       bundle: subject
 
-  # Complex fields can have their individual
-  # parts set independently.  Use / to denote
-  # you're working with a property of a field
-  # directly.
-  field_linked_agent/target_id:
-    plugin: entity_generate
-    source: photographer 
-    entity_type: taxonomy_term
-    value_key: name
-    bundle_key: vid
-    bundle: person 
+  # If you have multiple values of a complex
+  # field, iterate over them using sub_process.
+  # But sub_process requires structured data
+  # i.e. an associative array, not a string
+  # or list of strings. To turn strings into
+  # associative arrays, use the custom
+  # process plugin str_to_assoc.
 
-  # Hard-code the rel_type to photographer
-  # for all the names in the photographer
-  # column.
-  field_linked_agent/rel_type: constants/relator
+  # Extract a list of names from the column
+  # called photographer, and transform it into
+  # an array of associative arrays.
+  photographers:
+    -
+      source: photographer
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+
+  # Iterate over the array of associative arrays.
+  # We create the taxonomy terms here so that we
+  # can specify the bundle - other columns which
+  # might feed into Linked Agent may contain
+  # corporate bodies or families. The resulting
+  # array contains the resulting term id (tid)
+  # under the key 'target_id'.
+  # We also add a key-value pair
+  # 'rel_type' => 'relators:pht'. Other columns
+  # might use different relators.
+  linked_agent_pht:
+    plugin: sub_process
+    source: '@photographers'
+    process:
+      target_id:
+        plugin: entity_generate
+        source: name
+        entity_type: taxonomy_term
+        value_key: name
+        bundle_key: vid
+        bundle: person
+      rel_type:
+        plugin: default_value
+        default_value: 'relators:pht'
+
+  # Extract an array of names from the column
+  # called provider
+  providers:
+    -
+      source: provider
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+  # Generate/lookup taxonomy terms in the
+  # corporate body vocab, and add the rel_type.
+  linked_agent_prv:
+    plugin: sub_process
+    source: '@providers'
+    process:
+      target_id:
+        plugin: entity_generate
+        source: name
+        entity_type: taxonomy_term
+        value_key: name
+        bundle_key: vid
+        bundle: 'corporate_body'
+      rel_type:
+        plugin: default_value
+        default_value: 'relators:prv'
+
+  # Write to the linked agent field. In this case
+  # we first want to merge the info from the
+  # photographer and provider columns. Since we 
+  # already prepared our structured array using
+  # the components of the typed_relation field as 
+  # keys ('target_id' and 'rel_type'), we can just
+  # pass this array into field_linked_agent.
+  field_linked_agent:
+    plugin: merge
+    source:
+      - '@linked_agent_pht'
+      - '@linked_agent_prv'
 
 # We're making nodes
 destination:
