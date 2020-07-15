@@ -29,7 +29,7 @@ source:
 
     # Hard-code mime type to jpeg.  This could easily come from a column in the CSV if you have
     # different mimetypes.
-    mime: image/jpeg
+    mimetype: image/jpeg
 
     # Everything gets created as admin
     uid: 1
