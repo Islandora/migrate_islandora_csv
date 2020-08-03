@@ -4,7 +4,7 @@ dependencies:
     module:
       - migrate_islandora_csv
 
-id: node 
+id: example_migration_node 
 label: Import Nodes from CSV 
 migration_group: migrate_islandora_csv
 
@@ -17,12 +17,12 @@ source:
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
   keys:
-    - file 
+    - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
     # We're tagging our nodes as Images
-    model: Image 
+    model: Image
 
     # Everything gets created as admin
     uid: 1
@@ -166,3 +166,8 @@ process:
 destination:
   plugin: 'entity:node'
   default_bundle: islandora_object
+
+migration_dependencies:
+  required:
+    - migrate_plus.migration.example_migration_file
+  optional: {  }
