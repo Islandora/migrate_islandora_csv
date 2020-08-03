@@ -4,7 +4,7 @@ dependencies:
     module:
       - migrate_islandora_csv 
 
-id: file
+id: example_migration_file
 label: Import Image Files
 migration_group: migrate_islandora_csv 
 
@@ -17,8 +17,8 @@ source:
   header_row_count: 1 
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
-  keys: 
-    - file 
+  keys:
+    - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
