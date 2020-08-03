@@ -4,7 +4,7 @@ dependencies:
     module:
       - migrate_islandora_csv 
 
-id: media 
+id: example_migration_media 
 label: Import Media from CSV 
 migration_group: migrate_islandora_csv
 
@@ -17,7 +17,7 @@ source:
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
   keys:
-    - file 
+    - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
@@ -45,14 +45,14 @@ process:
   field_media_image:
     plugin: migration_lookup
     source: file 
-    migration: file 
+    migration: example_migration_file
     no_stub: true
 
   # Lookup the migrated node in the node migration
   field_media_of:
     plugin: migration_lookup
     source: file 
-    migration: node 
+    migration: example_migration_node 
     no_stub: true
     
 destination:
