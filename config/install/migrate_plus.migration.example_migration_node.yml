@@ -166,8 +166,3 @@ process:
 destination:
   plugin: 'entity:node'
   default_bundle: islandora_object
-
-migration_dependencies:
-  required:
-    - migrate_plus.migration.example_migration_file
-  optional: {  }
