@@ -15,9 +15,9 @@ source:
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
 
-  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  # Each migration needs a unique key per row in the csv.  Here we're using the ID, it was an arbitrary selection but one that is unique to each CSV row.
   keys:
-    - file
+    - ID
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
@@ -44,14 +44,14 @@ process:
   # Lookup the migrated file in the file migration.
   field_media_image:
     plugin: migration_lookup
-    source: file
+    source: ID
     migration: example_migration_file
     no_stub: true
 
   # Lookup the migrated node in the node migration
   field_media_of:
     plugin: migration_lookup
-    source: file 
+    source: ID
     migration: example_migration_node 
     no_stub: true
     

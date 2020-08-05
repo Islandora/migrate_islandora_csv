@@ -16,9 +16,9 @@ source:
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1 
 
-  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  # Each migration needs a unique key per row in the csv. Here we're using the ID, it was an arbitrary selection but one that is unique to each CSV row.
   keys:
-    - file
+    - ID
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
@@ -41,11 +41,11 @@ process:
   uid: constants/uid
 
   # Hack the file name out of the full path provided in the 'file' column.
-  filename:
+  filepath:
     -
       plugin: callback
       callable: pathinfo
-      source: file
+      source: filename
     -
       plugin: extract
       index:
@@ -57,7 +57,7 @@ process:
     delimiter: /
     source:
       - constants/destination_dir
-      - '@filename'
+      - '@filepath'
 
   ##
   # Here's where we copy the file over and set the uri of the file entity.
@@ -65,7 +65,7 @@ process:
   uri:
     plugin: file_copy
     source:
-      - file # The source column in the CSV
+      - filename # The source column in the CSV
       - '@destination' # The destination entry from above  
 
 

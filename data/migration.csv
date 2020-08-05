@@ -1,4 +1,4 @@
-ID,file,title,subtitle,description,issued,subject,photographer,provider
+ID,filename,title,subtitle,description,issued,subject,photographer,provider
 1,/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nails Nails Nails.jpg,Nails Nails Nails,,A sign pointing towards a nail salon.,2018-01-01,Neon signs|Night,Clem Onojeghuo,Clawde|Clawbster
 2,/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Free Smells.jpg,Free Smells,We're givin' 'em away,A sign on a restaurant front advertising free smells,2018-02-01,Neon signs|Night|Funny,The Collab,Clawde|Clawbster
 3,/var/www/html/drupal/web/modules/contrib/migrate_islandora_csv/data/images/Nothing to See Here.jpg,Nothing To See Here,Move Along People,A sign above a building that says "Nothing to see here",2018-03-01,Neon signs|Night,Argelis Rebolledo,Clawde|Clawbster

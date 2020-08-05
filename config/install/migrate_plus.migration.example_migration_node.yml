@@ -4,7 +4,7 @@ dependencies:
     module:
       - migrate_islandora_csv
 
-id: example_migration_node 
+id: example_migration_node
 label: Import Nodes from CSV 
 migration_group: migrate_islandora_csv
 
@@ -15,9 +15,9 @@ source:
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
 
-  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  # Each migration needs a unique key per row in the csv. Here we're using the ID, it was an arbitrary selection but one that is unique to each CSV row.
   keys:
-    - file
+    - ID
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
