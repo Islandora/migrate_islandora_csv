@@ -2,11 +2,11 @@
 dependencies:
   enforced:
     module:
-      - migrate_islandora_csv 
+      - migrate_islandora_csv
 
 id: example_migration_file
 label: Import Image Files
-migration_group: migrate_islandora_csv 
+migration_group: example_migrate_islandora_csv
 
 source:
   plugin: csv
@@ -14,7 +14,7 @@ source:
   delimiter: ','
 
   # 1 means you have a header row, 0 means you don't
-  header_row_count: 1 
+  header_row_count: 1
 
   # Each migration needs a unique key per row in the csv. Here we're using the ID, it was an arbitrary selection but one that is unique to each CSV row.
   keys:
@@ -25,7 +25,7 @@ source:
     # Islandora uses flysystem and stream wrappers to work with files.  What we're really saying here is
     # to put these files in Fedora in a 'csv_migration' folder.  It doesn't matter if the directory
     # doesn't exist yet, it will get created for you automatically.
-    destination_dir: 'fedora://csv_migration' 
+    destination_dir: 'fedora://csv_migration'
 
     # Hard-code mime type to jpeg.  This could easily come from a column in the CSV if you have
     # different mimetypes.
@@ -66,7 +66,7 @@ process:
     plugin: file_copy
     source:
       - filename # The source column in the CSV
-      - '@destination' # The destination entry from above  
+      - '@destination' # The destination entry from above
 
 
 destination:
