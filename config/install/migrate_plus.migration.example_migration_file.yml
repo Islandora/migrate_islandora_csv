@@ -12,6 +12,7 @@ source:
   plugin: csv
   path: 'modules/contrib/migrate_islandora_csv/data/migration.csv'
   delimiter: ','
+  enclosure: '"'
 
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
@@ -29,7 +30,7 @@ source:
 
     # Hard-code mime type to jpeg.  This could easily come from a column in the CSV if you have
     # different mimetypes.
-    mimetype: image/jpeg
+    # mimetype: image/jpeg
 
     # Everything gets created as admin
     uid: 1
@@ -37,7 +38,7 @@ source:
 process:
 
   # Set these properties from constants.
-  filemime: constants/mimetype
+  filemime: mimetype
   uid: constants/uid
 
   # Hack the file name out of the full path provided in the 'file' column.
@@ -53,11 +54,14 @@ process:
 
   # Construct the destination URI using the file name.
   destination:
-    plugin: concat
-    delimiter: /
-    source:
-      - constants/destination_dir
-      - '@filepath'
+    -
+      plugin: concat
+      delimiter: /
+      source:
+        - constants/destination_dir
+        - '@filepath'
+    -
+      plugin: urlencode
 
   ##
   # Here's where we copy the file over and set the uri of the file entity.

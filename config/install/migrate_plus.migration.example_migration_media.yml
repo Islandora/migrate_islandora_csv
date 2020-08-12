@@ -11,6 +11,8 @@ migration_group: example_migrate_islandora_csv
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
+  delimiter: ','
+  enclosure: '"'
 
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
@@ -42,11 +44,13 @@ process:
     bundle: islandora_media_use
 
   # Lookup the migrated file in the file migration.
-  field_media_image:
+  field_media_image/target_id:
     plugin: migration_lookup
     source: ID
     migration: example_migration_file
     no_stub: true
+
+  field_media_image/alt: title
 
   # Lookup the migrated node in the node migration
   field_media_of:
@@ -59,9 +63,8 @@ destination:
   # These are 'image' media we're making.
   plugin: 'entity:media'
   default_bundle: image
-
-migration_dependencies:
-  required:
-    - migrate_plus.migration.example_migration_file
-    - migrate_plus.migration.example_migration_node
-  optional: {  }
+  migration_dependencies:
+    required:
+      - migrate_plus.migration.example_migration_file
+      - migrate_plus.migration.example_migration_node
+    optional: {  }

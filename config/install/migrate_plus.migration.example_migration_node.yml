@@ -11,6 +11,8 @@ migration_group: example_migrate_islandora_csv
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
+  delimiter: ','
+  enclosure: '"'
 
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
