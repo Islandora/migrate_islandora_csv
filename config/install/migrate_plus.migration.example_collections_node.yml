@@ -1,0 +1,117 @@
+# Uninstall this config when the feature is uninstalled
+dependencies:
+  enforced:
+    module:
+      - migrate_islandora_csv
+
+id: example_collections_node
+label: Step 3 - Import Example Collection Nodes
+migration_group: example_collections_migrate_islandora_csv
+
+source:
+  plugin: csv
+  path: modules/contrib/migrate_islandora_csv/data/example_collections.csv
+  delimiter: ','
+  enclosure: '"'
+
+  # 1 means you have a header row, 0 means you don't
+  header_row_count: 1
+
+  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  keys:
+    - ID
+
+  # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
+  constants:
+    # Everything gets created as admin
+    uid: 1
+
+# Set fields using values from the CSV
+process:
+  title: title
+  uid: constants/uid
+
+  promote: promote
+
+  field_description:
+    plugin: skip_on_empty
+    source: description
+    method: process
+
+  field_model:
+    plugin: entity_lookup
+    source: model
+    entity_type: taxonomy_term
+    value_key: name
+    bundle_key: vid
+    bundle: islandora_models
+
+  # Split up our pipe-delimited string of
+  # subjects, and generate terms for each.
+  field_subject:
+    -
+      plugin: skip_on_empty
+      source: subject
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: entity_generate
+      entity_type: taxonomy_term
+      value_key: name
+      bundle_key: vid
+      bundle: subject
+
+  field_member_of:
+    -
+      plugin: skip_on_empty
+      source: parent_id
+      method: process
+    -
+      plugin: migration_lookup
+      source: parent_id
+      migration: example_collections_node
+      no_stub: true
+
+  languages:
+    -
+      source: languages
+      plugin: skip_on_empty
+      method: process
+    -
+      plugin: explode
+      delimiter: '|'
+    -
+      plugin: str_to_assoc
+      key: 'name'
+
+  languages_creator:
+    plugin: sub_process
+    source: '@languages'
+    process:
+        target_id:
+          plugin: entity_generate
+          source: name
+          entity_type: taxonomy_term
+          value_key: name
+          bundle_key: vid
+          bundle: 'language'
+
+  field_language: '@languages'
+
+  # This is to keep track of the old PIDs
+  field_pid:
+    plugin: skip_on_empty
+    source: PID
+    method: process
+
+# We're making nodes
+destination:
+  plugin: 'entity:node'
+  default_bundle: islandora_object
+
+migration_dependencies:
+  required:
+    - migrate_plus.migration.example_collections_subjects
+  optional: {  }

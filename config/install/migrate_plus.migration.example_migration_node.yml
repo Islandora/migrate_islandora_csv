@@ -4,20 +4,22 @@ dependencies:
     module:
       - migrate_islandora_csv
 
-id: example_migration_node 
-label: Import Nodes from CSV 
-migration_group: migrate_islandora_csv
+id: example_migration_node
+label: Import Nodes from CSV
+migration_group: example_migrate_islandora_csv
 
 source:
   plugin: csv
   path: modules/contrib/migrate_islandora_csv/data/migration.csv
+  delimiter: ','
+  enclosure: '"'
 
   # 1 means you have a header row, 0 means you don't
   header_row_count: 1
 
-  # Each migration needs a unique key per row in the csv.  Here we're using the file path.
+  # Each migration needs a unique key per row in the csv. Here we're using the ID, it was an arbitrary selection but one that is unique to each CSV row.
   keys:
-    - file
+    - ID
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
   constants:
@@ -37,7 +39,7 @@ process:
   # in.
   field_alternative_title:
     plugin: skip_on_empty
-    source: subtitle 
+    source: subtitle
     method: process
 
   field_description: description
@@ -50,16 +52,16 @@ process:
     plugin: entity_lookup
     source: constants/model
     entity_type: taxonomy_term
-    value_key: name 
+    value_key: name
     bundle_key: vid
-    bundle: islandora_models 
+    bundle: islandora_models
 
   # Split up our pipe-delimited string of
   # subjects, and generate terms for each.
   field_subject:
     -
       plugin: skip_on_empty
-      source: subject 
+      source: subject
       method: process
     -
       plugin: explode
@@ -151,9 +153,9 @@ process:
 
   # Write to the linked agent field. In this case
   # we first want to merge the info from the
-  # photographer and provider columns. Since we 
+  # photographer and provider columns. Since we
   # already prepared our structured array using
-  # the components of the typed_relation field as 
+  # the components of the typed_relation field as
   # keys ('target_id' and 'rel_type'), we can just
   # pass this array into field_linked_agent.
   field_linked_agent:

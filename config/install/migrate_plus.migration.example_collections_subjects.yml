@@ -1,0 +1,42 @@
+# Uninstall this config when the feature is uninstalled
+dependencies:
+  enforced:
+    module:
+      - migrate_islandora_csv
+
+id: example_collections_subjects
+label: Step 1 - Import Example Collection Subjects
+migration_group: example_collections_migrate_islandora_csv
+
+source:
+  plugin: csv
+  path: modules/contrib/migrate_islandora_csv/data/collection_subjects.csv
+  delimiter: ','
+  enclosure: '"'
+
+  # 1 means you have a header row, 0 means you don't
+  header_row_count: 1
+
+    # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
+  constants:
+    # Everything gets created as admin
+    uid: 1
+
+  keys:
+    - subject
+
+# Set fields using values from the CSV
+process:
+  # uid: constants/uid
+  uid:
+    plugin: default_value
+    default_value: 1
+
+  name: subject
+  field_authority_link/title: subject
+  field_authority_link/source: subject_authority
+  field_authority_link/uri: subject_uri
+
+destination:
+  plugin: entity:taxonomy_term
+  default_bundle: subject

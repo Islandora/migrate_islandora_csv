@@ -1,0 +1,56 @@
+# Uninstall this config when the feature is uninstalled
+dependencies:
+  enforced:
+    module:
+      - migrate_islandora_csv
+
+id: example_collections_file
+label: Step 2 - Import Example Collection Thumbnail image Files
+migration_group: example_collections_migrate_islandora_csv
+
+source:
+  plugin: csv
+  path: modules/contrib/migrate_islandora_csv/data/example_collections.csv
+  delimiter: ','
+  enclosure: '"'
+  header_row_count: 1
+
+  keys:
+    - ID
+
+  constants:
+    destination_dir: 'fedora://csv_migration'
+    filemime: image/jpeg
+    uid: 1
+
+process:
+  filemime: constants/mimetype
+  uid: constants/uid
+
+  filename:
+    -
+      plugin: callback
+      callable: pathinfo
+      source: TN
+    -
+      plugin: extract
+      index:
+        - basename
+
+  destination:
+    -
+      plugin: concat
+      delimiter: /
+      source:
+        - constants/destination_dir
+        - '@filename'
+
+  uri:
+    plugin: file_copy
+    source:
+      - TN
+      - '@destination'
+
+destination:
+  plugin: 'entity:file'
+  type: file
