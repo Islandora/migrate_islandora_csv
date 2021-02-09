@@ -10,6 +10,6 @@
     "issues": "https://www.github.com/Islandora/documentation/issues"
   },
   "require": { 
-    "drupal/migrate_source_csv" : "^2.2"
+    "drupal/migrate_source_csv" : "^3.4"
   }
 }

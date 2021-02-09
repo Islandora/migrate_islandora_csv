@@ -16,7 +16,7 @@ source:
   header_row_count: 1
 
   # Each migration needs a unique key per row in the csv.  Here we're using the file path.
-  keys:
+  ids:
     - file
 
   # You can't enter string literals into a process plugin, but you can give it a constant as a 'source'.
