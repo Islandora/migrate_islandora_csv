@@ -2,6 +2,7 @@
 
 namespace Drupal\migrate_islandora_csv\Plugin\migrate\process;
 
+use Drupal\Component\Plugin\ConfigurableInterface;
 use Drupal\controlled_access_terms\EDTFUtils;
 use Drupal\migrate\MigrateExecutableInterface;
 use Drupal\migrate\MigrateSkipRowException;
@@ -23,37 +24,42 @@ use Drupal\migrate\Row;
  *   id = "valid_edtf"
  * )
  */
-class ValidEDTF extends ProcessPluginBase {
+class ValidEDTF extends ProcessPluginBase implements ConfigurableInterface {
 
   /**
-   * Skips the current row when value is not set.
-   *
-   * @param mixed $value
-   *   The input value.
-   * @param \Drupal\migrate\MigrateExecutableInterface $migrate_executable
-   *   The migration in which this process is being executed.
-   * @param \Drupal\migrate\Row $row
-   *   The row from the source to process.
-   * @param string $destination_property
-   *   The destination property currently worked on. This is only used together
-   *   with the $row above.
-   *
-   * @return mixed
-   *   The input value, $value, if it is not empty.
-   *
-   * @throws \Drupal\migrate\MigrateSkipRowException
-   *   Thrown if the source property is not set and the row should be skipped,
-   *   records with STATUS_IGNORED status in the map.
+   * {@inheritdoc}
    */
-  public function validate($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
-    $intervals = $this->configuration['intervals'] ?? TRUE;
-    $sets = $this->configuration['sets'] ?? TRUE;
-    $strict = $this->configuration['strict'] ?? FALSE;
-    $errors = EDTFUtils::validate($value, $intervals, $sets, $strict);
+  public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
+    $errors = EDTFUtils::validate($value, $this->configuration['intervals'], $this->configuration['sets'], $this->configuration['strict']);
     if (!empty($errors)) {
       throw new MigrateSkipRowException("The value: {$value} is not a valid EDTF date: " . implode(' ', $errors));
     }
     return $value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfiguration() {
+    return $this->configuration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setConfiguration(array $configuration) {
+    $this->configuration = $configuration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    return [
+      'intervals' => TRUE,
+      'sets' => TRUE,
+      'strict' => FALSE,
+    ];
   }
 
 }
