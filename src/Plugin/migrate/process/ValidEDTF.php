@@ -49,14 +49,14 @@ class ValidEDTF extends ProcessPluginBase implements ConfigurableInterface {
    * {@inheritdoc}
    */
   public function getConfiguration() {
-    return $this->configuration + $this->defaultConfiguration();
+    return $this->configuration;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setConfiguration(array $configuration) {
-    $this->configuration = $configuration;
+    $this->configuration = $configuration + $this->defaultConfiguration();
   }
 
   /**
