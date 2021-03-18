@@ -29,6 +29,14 @@ class ValidEDTF extends ProcessPluginBase implements ConfigurableInterface {
   /**
    * {@inheritdoc}
    */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->setConfiguration($configuration);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function transform($value, MigrateExecutableInterface $migrate_executable, Row $row, $destination_property) {
     $errors = EDTFUtils::validate($value, $this->configuration['intervals'], $this->configuration['sets'], $this->configuration['strict']);
     if (!empty($errors)) {
@@ -41,7 +49,7 @@ class ValidEDTF extends ProcessPluginBase implements ConfigurableInterface {
    * {@inheritdoc}
    */
   public function getConfiguration() {
-    return $this->configuration;
+    return $this->configuration + $this->defaultConfiguration();
   }
 
   /**
